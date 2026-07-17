@@ -24,10 +24,10 @@ Integración comunitaria de Home Assistant para consultar datos meteorológicos 
 
 1. Home Assistant `2026.7.0` o posterior durante la fase beta.
 2. HACS, para la instalación recomendada.
-3. Credenciales personales de acceso a la API de Euskalmet:
+3. Credenciales personales de acceso a la API de Euskalmet (se pueden conseguir en: https://api.euskadi.eus)
    - correo electrónico;
    - clave privada;
-   - `login_id`, cuando corresponda.
+     
 
 La integración no incluye credenciales compartidas ni claves incorporadas. El JWT se firma localmente mediante RS256 en la instalación de Home Assistant del usuario.
 

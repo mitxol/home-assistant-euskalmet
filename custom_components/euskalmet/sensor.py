@@ -10,8 +10,8 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .coordinator import EuskalmetCoordinator
 from .const import DOMAIN, MEASURES
+from .coordinator import EuskalmetCoordinator
 from .entity import device_info, summary_device_info
 from .formatting import degrees_to_compass
 

@@ -14,8 +14,8 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
 from .api import EuskalmetAPI, EuskalmetAPIError
-from .coordinator import EuskalmetCoordinator
 from .const import DOMAIN
+from .coordinator import EuskalmetCoordinator
 from .history_websocket import async_register_history_websocket
 from .radar_websocket import async_register_websocket_commands
 

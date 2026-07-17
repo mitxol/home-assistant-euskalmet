@@ -9,8 +9,8 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .coordinator import EuskalmetCoordinator
 from .const import RADAR_BOUNDS, RADAR_CENTER, RADAR_RANGE_KM
+from .coordinator import EuskalmetCoordinator
 from .entity import device_info
 
 PARALLEL_UPDATES = 0

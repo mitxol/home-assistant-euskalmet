@@ -1,0 +1,74 @@
+{
+  "title": "Euskalmet",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurar Euskalmet",
+        "description": "Introduce los datos de acceso. En el siguiente paso podrás elegir una estación meteorológica y ver qué magnitudes ofrece.",
+        "data": {
+          "email": "Correo electrónico",
+          "private_key": "Clave privada",
+          "login_id": "Login ID (opcional)"
+        }
+      },
+      "station": {
+        "title": "Elegir estación meteorológica",
+        "description": "Se han encontrado {station_count} estaciones meteorológicas activas. Cada opción indica cuántas magnitudes ofrece y cuáles faltan. Los mareógrafos y las estaciones sin datos meteorológicos no aparecen.",
+        "data": {
+          "station_id": "Estación"
+        }
+      },
+      "confirm": {
+        "title": "Confirmar estación incompleta",
+        "description": "La estación **{station}** ofrece: {available}.\n\nNo ofrece: **{missing}**.\n\nSolo se crearán sensores para las magnitudes disponibles. Pulsa Enviar para añadirla de todos modos.",
+        "data": {}
+      }
+    },
+    "error": {
+      "invalid_auth": "Las credenciales de Euskalmet no son válidas.",
+      "cannot_connect": "No se pudo conectar con Euskalmet. Inténtalo de nuevo.",
+      "cannot_determine_location": "No se pudo asociar la estación elegida con una localidad de previsión de Euskalmet.",
+      "cannot_load_stations": "No se pudo cargar el catálogo oficial de estaciones.",
+      "no_compatible_stations": "No se encontraron estaciones meteorológicas que publiquen alguna de las magnitudes compatibles.",
+      "station_not_available": "La estación elegida ya no está disponible. Vuelve a abrir la configuración."
+    },
+    "abort": {
+      "already_configured": "La integración ya está configurada."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "alert_level": {
+        "name": "Nivel de aviso",
+        "state": {
+          "none": "Sin avisos",
+          "yellow": "Amarillo",
+          "orange": "Naranja",
+          "red": "Rojo"
+        }
+      }
+    },
+    "weather": {
+      "weather": {
+        "name": "Tiempo",
+        "state": {
+          "clear-night": "Despejado",
+          "cloudy": "Nublado",
+          "exceptional": "Excepcional",
+          "fog": "Niebla",
+          "hail": "Granizo",
+          "lightning": "Tormenta",
+          "lightning-rainy": "Tormenta con lluvia",
+          "partlycloudy": "Parcialmente nublado",
+          "pouring": "Lluvia intensa",
+          "rainy": "Lluvia",
+          "snowy": "Nieve",
+          "snowy-rainy": "Aguanieve",
+          "sunny": "Soleado",
+          "windy": "Viento",
+          "windy-variant": "Viento con nubes"
+        }
+      }
+    }
+  }
+}

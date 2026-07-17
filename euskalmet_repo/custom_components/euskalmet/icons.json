@@ -1,0 +1,15 @@
+{
+  "entity": {
+    "sensor": {
+      "alert_level": {
+        "default": "mdi:check-circle-outline",
+        "state": {
+          "none": "mdi:check-circle-outline",
+          "yellow": "mdi:alert",
+          "orange": "mdi:alert-octagon",
+          "red": "mdi:alert-decagram"
+        }
+      }
+    }
+  }
+}

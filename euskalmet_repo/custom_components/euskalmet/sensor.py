@@ -1,0 +1,464 @@
+from __future__ import annotations
+
+from typing import Any
+
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from .const import DOMAIN, MEASURES
+from .coordinator import EuskalmetCoordinator
+from .entity import device_info, summary_device_info
+from .formatting import degrees_to_compass
+
+PARALLEL_UPDATES = 0
+
+SUMMARY_SENSORS = (
+    ("precipitation_today", "Precipitación hoy", "summary_day", "precipitation", "total", "mm", "mdi:weather-rainy"),
+    ("temperature_min_today", "Temperatura mínima hoy", "summary_day", "temperature", "min", "°C", "mdi:thermometer-chevron-down"),
+    ("temperature_mean_today", "Temperatura media hoy", "summary_day", "temperature", "mean", "°C", "mdi:thermometer"),
+    ("temperature_max_today", "Temperatura máxima hoy", "summary_day", "temperature", "max", "°C", "mdi:thermometer-chevron-up"),
+    ("wind_gust_max_today", "Racha máxima hoy", "summary_day", "max_speed", "max", "km/h", "mdi:weather-windy"),
+    ("precipitation_month", "Precipitación este mes", "summary_month", "precipitation", "total", "mm", "mdi:weather-rainy"),
+    ("temperature_min_month", "Temperatura mínima del mes", "summary_month", "temperature", "min", "°C", "mdi:thermometer-chevron-down"),
+    ("temperature_mean_month", "Temperatura media del mes", "summary_month", "temperature", "mean", "°C", "mdi:thermometer"),
+    ("temperature_max_month", "Temperatura máxima del mes", "summary_month", "temperature", "max", "°C", "mdi:thermometer-chevron-up"),
+    ("wind_gust_max_month", "Racha máxima del mes", "summary_month", "max_speed", "max", "km/h", "mdi:weather-windy"),
+    ("humidity_min_today", "Humedad mínima hoy", "summary_day", "humidity", "min", "%", "mdi:water-percent"),
+    ("humidity_mean_today", "Humedad media hoy", "summary_day", "humidity", "mean", "%", "mdi:water-percent"),
+    ("humidity_max_today", "Humedad máxima hoy", "summary_day", "humidity", "max", "%", "mdi:water-percent"),
+    ("humidity_min_month", "Humedad mínima del mes", "summary_month", "humidity", "min", "%", "mdi:water-percent"),
+    ("humidity_mean_month", "Humedad media del mes", "summary_month", "humidity", "mean", "%", "mdi:water-percent"),
+    ("humidity_max_month", "Humedad máxima del mes", "summary_month", "humidity", "max", "%", "mdi:water-percent"),
+    ("pressure_min_today", "Presión mínima hoy", "summary_day", "pressure", "min", "hPa", "mdi:gauge"),
+    ("pressure_mean_today", "Presión media hoy", "summary_day", "pressure", "mean", "hPa", "mdi:gauge"),
+    ("pressure_max_today", "Presión máxima hoy", "summary_day", "pressure", "max", "hPa", "mdi:gauge"),
+    ("pressure_min_month", "Presión mínima del mes", "summary_month", "pressure", "min", "hPa", "mdi:gauge"),
+    ("pressure_mean_month", "Presión media del mes", "summary_month", "pressure", "mean", "hPa", "mdi:gauge"),
+    ("pressure_max_month", "Presión máxima del mes", "summary_month", "pressure", "max", "hPa", "mdi:gauge"),
+    ("irradiance_mean_today", "Radiación solar media hoy", "summary_day", "irradiance", "mean", "W/m²", "mdi:white-balance-sunny"),
+    ("irradiance_max_today", "Radiación solar máxima hoy", "summary_day", "irradiance", "max", "W/m²", "mdi:white-balance-sunny"),
+    ("irradiance_mean_month", "Radiación solar media del mes", "summary_month", "irradiance", "mean", "W/m²", "mdi:white-balance-sunny"),
+    ("irradiance_max_month", "Radiación solar máxima del mes", "summary_month", "irradiance", "max", "W/m²", "mdi:white-balance-sunny"),
+    ("wind_speed_mean_today", "Velocidad media del viento hoy", "summary_day", "mean_speed", "mean", "km/h", "mdi:weather-windy"),
+    ("wind_speed_mean_month", "Velocidad media del viento del mes", "summary_month", "mean_speed", "mean", "km/h", "mdi:weather-windy"),
+)
+
+SUMMARY_MEASURE_TYPES = {
+    "precipitation": "measuresForWater",
+    "temperature": "measuresForAir",
+    "humidity": "measuresForAir",
+    "pressure": "measuresForAtmosphere",
+    "irradiance": "measuresForSun",
+    "mean_speed": "measuresForWind",
+    "max_speed": "measuresForWind",
+}
+
+SUMMARY_REQUIRED_KEYS = {
+    "precipitation": "precipitation",
+    "temperature": "temperature",
+    "humidity": "humidity",
+    "pressure": "pressure",
+    "irradiance": "irradiance",
+    "mean_speed": "wind_speed",
+    "max_speed": "wind_gust",
+}
+
+ANNUAL_SUMMARY_SENSORS = tuple(
+    (
+        key.replace("_today", "_year").replace("_month", "_year"),
+        name.replace(" hoy", " este año").replace(" del mes", " del año").replace(" este mes", " este año"),
+        "summary_year",
+        measure,
+        field,
+        unit,
+        icon,
+    )
+    for key, name, section, measure, field, unit, icon in SUMMARY_SENSORS
+    if section == "summary_month"
+)
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Configurar los sensores de Euskalmet."""
+
+    coordinator = entry.runtime_data
+    configured_measures = entry.data.get("available_measures")
+    supported = coordinator.api.supported_measurements
+
+    if not supported and isinstance(configured_measures, list):
+        supported = {
+            key for key in configured_measures if key in MEASURES
+        }
+    if not supported:
+        supported = set(MEASURES)
+
+    entities = [
+        EuskalmetSensor(coordinator, key)
+        for key in MEASURES
+        if key in supported
+    ]
+
+    # Eliminar del registro sensores que versiones anteriores crearon para
+    # magnitudes que esta estación no publica.
+    registry = er.async_get(hass)
+    for key in MEASURES.keys() - supported:
+        entity_id = registry.async_get_entity_id(
+            "sensor",
+            DOMAIN,
+            f"{coordinator.api.station_id}_{key}",
+        )
+        if entity_id is not None:
+            registry.async_remove(entity_id)
+
+    entities.append(
+        EuskalmetAlertLevelSensor(coordinator)
+    )
+    entities.extend(
+        EuskalmetSummarySensor(coordinator, config)
+        for config in SUMMARY_SENSORS
+        if SUMMARY_REQUIRED_KEYS[config[3]] in supported
+    )
+    entities.extend(
+        EuskalmetSummarySensor(coordinator, config)
+        for config in ANNUAL_SUMMARY_SENSORS
+        if SUMMARY_REQUIRED_KEYS[config[3]] in supported
+    )
+
+    async_add_entities(entities)
+
+
+class EuskalmetSummarySensor(CoordinatorEntity, SensorEntity):
+    """Sensor de resumen diario o mensual calculado por Euskalmet."""
+
+    _attr_has_entity_name = True
+    _attr_state_class = "measurement"
+
+    def __init__(self, coordinator: EuskalmetCoordinator, config: tuple) -> None:
+        super().__init__(coordinator)
+        (
+            self.key,
+            self._attr_name,
+            self.section,
+            self.measure,
+            self.field,
+            self._attr_native_unit_of_measurement,
+            self._attr_icon,
+        ) = config
+        self._attr_unique_id = f"{coordinator.api.station_id}_{self.key}"
+        if self.measure == "temperature":
+            self._attr_device_class = SensorDeviceClass.TEMPERATURE
+        elif self.measure in {"mean_speed", "max_speed"}:
+            self._attr_device_class = SensorDeviceClass.WIND_SPEED
+        elif self.measure == "precipitation":
+            self._attr_device_class = SensorDeviceClass.PRECIPITATION
+        elif self.measure == "humidity":
+            self._attr_device_class = SensorDeviceClass.HUMIDITY
+        elif self.measure == "pressure":
+            self._attr_device_class = SensorDeviceClass.ATMOSPHERIC_PRESSURE
+        elif self.measure == "irradiance":
+            self._attr_device_class = SensorDeviceClass.IRRADIANCE
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return summary_device_info(
+            self.coordinator.api.station_id,
+            self.coordinator.api.station_name,
+        )
+
+    def _summary(self) -> dict[str, Any]:
+        if self.section == "summary_year":
+            return self._annual_summary()
+        document = (self.coordinator.data or {}).get(self.section, {})
+        items = document.get("items", []) if isinstance(document, dict) else []
+        measure_type = SUMMARY_MEASURE_TYPES[self.measure]
+        for item in items:
+            if (
+                isinstance(item, dict)
+                and item.get("measureType") == measure_type
+                and item.get("measureId") == self.measure
+            ):
+                summary = item.get("summary")
+                return summary if isinstance(summary, dict) else {}
+        return {}
+
+    def _annual_summary(self) -> dict[str, Any]:
+        """Combinar resúmenes mensuales conservando pesos y extremos."""
+
+        documents = (self.coordinator.data or {}).get(
+            "summary_year_months", {}
+        )
+        summaries: list[tuple[int, dict[str, Any]]] = []
+        for month, document in documents.items():
+            items = document.get("items", []) if isinstance(document, dict) else []
+            for item in items:
+                if (
+                    isinstance(item, dict)
+                    and item.get("measureType")
+                    == SUMMARY_MEASURE_TYPES[self.measure]
+                    and item.get("measureId") == self.measure
+                    and isinstance(item.get("summary"), dict)
+                ):
+                    summaries.append((int(month), item["summary"]))
+                    break
+        if not summaries:
+            return {}
+        if self.field == "total":
+            return {"total": sum(float(s.get("total", 0)) for _, s in summaries)}
+        if self.field == "mean":
+            weighted = [
+                (float(s["mean"]), int(s.get("processedReadings", 0)))
+                for _, s in summaries
+                if isinstance(s.get("mean"), (int, float))
+                and int(s.get("processedReadings", 0)) > 0
+            ]
+            count = sum(weight for _, weight in weighted)
+            return {
+                "mean": (
+                    sum(value * weight for value, weight in weighted) / count
+                    if count else None
+                )
+            }
+        extremes = [
+            (month, s[self.field])
+            for month, s in summaries
+            if isinstance(s.get(self.field), dict)
+            and isinstance(s[self.field].get("value"), (int, float))
+        ]
+        if not extremes:
+            return {}
+        month, extreme = (
+            min(extremes, key=lambda item: item[1]["value"])
+            if self.field == "min"
+            else max(extremes, key=lambda item: item[1]["value"])
+        )
+        return {self.field: {**extreme, "atMonth": month}}
+
+    @property
+    def native_value(self) -> Any:
+        value = self._summary().get(self.field)
+        if isinstance(value, dict):
+            value = value.get("value")
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return None
+        if self.measure in {"mean_speed", "max_speed"}:
+            return round(float(value) * 3.6, 1)
+        return round(float(value), 2)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        summary = self._summary()
+        extreme = summary.get(self.field)
+        attributes = {
+            "station": self.coordinator.api.station_id,
+            "period": self.section.removeprefix("summary_"),
+            "measure": self.measure,
+            "source": "euskalmet_api_aggregated_summary",
+        }
+        if isinstance(extreme, dict):
+            attributes.update(
+                {key: value for key, value in extreme.items() if key != "value"}
+            )
+        return attributes
+
+
+class EuskalmetSensor(
+    CoordinatorEntity,
+    SensorEntity,
+):
+    """Sensor de una medida de Euskalmet."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: EuskalmetCoordinator,
+        key: str,
+    ) -> None:
+        super().__init__(coordinator)
+
+        self.key = key
+        self.cfg = MEASURES[key]
+
+        self._attr_name = self.cfg["name"]
+        self._attr_unique_id = (
+            f"{coordinator.api.station_id}_{key}"
+        )
+
+        self._attr_icon = self.cfg["icon"]
+
+        if "device_class" in self.cfg:
+            self._attr_device_class = self.cfg["device_class"]
+
+        if "state_class" in self.cfg:
+            self._attr_state_class = self.cfg["state_class"]
+
+        self._attr_native_unit_of_measurement = self.cfg["unit"]
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return device_info(
+            self.coordinator.api.station_id,
+            self.coordinator.api.station_name,
+        )
+
+    @property
+    def native_value(self) -> Any:
+        if self.coordinator.data is None:
+            return None
+
+        current = self.coordinator.data.get(
+            "current",
+            {},
+        )
+
+        data = current.get(self.key)
+
+        if data is None or data.get("stale") is True:
+            return None
+
+        value = data.get("value")
+
+        if self.key == "wind_direction":
+            return degrees_to_compass(value)
+
+        return value
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        if self.coordinator.data is None:
+            return {}
+
+        current = self.coordinator.data.get(
+            "current",
+            {},
+        )
+
+        data = current.get(self.key)
+
+        if data is None:
+            return {}
+
+        attributes = {
+            "sensor": data.get(
+                "measure_id",
+                self.cfg["sensor"],
+            ),
+            "station": self.coordinator.api.station_id,
+            "station_name": self.coordinator.api.station_name,
+            "sensor_position_cm": data.get("sensor_position_cm"),
+            "measure": self.cfg["measure"],
+            "measure_type": self.cfg["measure_type"],
+            "source": data.get("source", "euskalmet_api"),
+            "slot": data.get("slot"),
+            "observed_at": data.get("observed_at"),
+            "age_seconds": data.get("age_seconds"),
+            "stale": data.get("stale"),
+            "from_cache": data.get("from_cache", False),
+        }
+
+        if self.key == "wind_direction":
+            attributes["degrees"] = data.get("value")
+
+        return attributes
+
+
+class EuskalmetAlertLevelSensor(
+    CoordinatorEntity,
+    SensorEntity,
+):
+    """Nivel máximo de aviso meteorológico."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Nivel de aviso"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["none", "yellow", "orange", "red"]
+    _attr_translation_key = "alert_level"
+
+    def __init__(self, coordinator: EuskalmetCoordinator) -> None:
+        super().__init__(coordinator)
+
+        self._attr_unique_id = (
+            f"{coordinator.api.station_id}_alert_level"
+        )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return device_info(
+            self.coordinator.api.station_id,
+            self.coordinator.api.station_name,
+        )
+
+    @property
+    def native_value(self) -> str:
+        if self.coordinator.data is None:
+            return "none"
+
+        severity = (
+            self.coordinator.data
+            .get("alerts", {})
+            .get("severity", "NONE")
+        )
+
+        return str(severity).lower()
+
+    @property
+    def icon(self) -> str:
+        severity = self.native_value
+
+        return {
+            "yellow": "mdi:alert",
+            "orange": "mdi:alert-octagon",
+            "red": "mdi:alert-decagram",
+        }.get(
+            severity,
+            "mdi:check-circle-outline",
+        )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        if self.coordinator.data is None:
+            return {}
+
+        alerts = self.coordinator.data.get(
+            "alerts",
+            {},
+        )
+
+        descriptions = alerts.get(
+            "descriptions",
+            [],
+        )
+
+        return {
+            "active": alerts.get(
+                "active",
+                False,
+            ),
+            "alert_count": alerts.get(
+                "count",
+                0,
+            ),
+            "causes": alerts.get(
+                "causes",
+                [],
+            ),
+            "description": (
+                descriptions[0]
+                if descriptions
+                else None
+            ),
+            "descriptions": descriptions,
+            "alerts": alerts.get(
+                "alerts",
+                [],
+            ),
+        }

@@ -1,0 +1,41 @@
+name: Informe de error
+description: Comunica un fallo reproducible de la integración.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: No adjuntes claves privadas, JWT ni otros datos personales.
+  - type: input
+    id: ha_version
+    attributes:
+      label: Versión de Home Assistant
+    validations:
+      required: true
+  - type: input
+    id: integration_version
+    attributes:
+      label: Versión de Euskalmet
+    validations:
+      required: true
+  - type: input
+    id: station
+    attributes:
+      label: Estación configurada
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción del problema
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducirlo
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Registros relevantes, revisados
+      render: text

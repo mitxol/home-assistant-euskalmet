@@ -1,0 +1,74 @@
+{
+  "title": "Euskalmet",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Euskalmet",
+        "description": "Enter your access details. In the next step you can choose a weather station and review the measurements it provides.",
+        "data": {
+          "email": "Email address",
+          "private_key": "Private key",
+          "login_id": "Login ID (optional)"
+        }
+      },
+      "station": {
+        "title": "Choose a weather station",
+        "description": "{station_count} active weather stations were found. Each option shows how many measurements it provides and which ones are missing. Tide gauges and stations without weather data are excluded.",
+        "data": {
+          "station_id": "Station"
+        }
+      },
+      "confirm": {
+        "title": "Confirm incomplete station",
+        "description": "The station **{station}** provides: {available}.\n\nIt does not provide: **{missing}**.\n\nOnly sensors for available measurements will be created. Select Submit to add it anyway.",
+        "data": {}
+      }
+    },
+    "error": {
+      "invalid_auth": "The Euskalmet credentials are invalid.",
+      "cannot_connect": "Could not connect to Euskalmet. Try again.",
+      "cannot_determine_location": "The selected station could not be associated with an Euskalmet forecast location.",
+      "cannot_load_stations": "Could not load the official station catalogue.",
+      "no_compatible_stations": "No weather stations publishing a supported measurement were found.",
+      "station_not_available": "The selected station is no longer available. Restart configuration."
+    },
+    "abort": {
+      "already_configured": "The integration is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "alert_level": {
+        "name": "Alert level",
+        "state": {
+          "none": "No alerts",
+          "yellow": "Yellow",
+          "orange": "Orange",
+          "red": "Red"
+        }
+      }
+    },
+    "weather": {
+      "weather": {
+        "name": "Weather",
+        "state": {
+          "clear-night": "Clear",
+          "cloudy": "Cloudy",
+          "exceptional": "Exceptional",
+          "fog": "Fog",
+          "hail": "Hail",
+          "lightning": "Lightning",
+          "lightning-rainy": "Lightning and rain",
+          "partlycloudy": "Partly cloudy",
+          "pouring": "Pouring",
+          "rainy": "Rainy",
+          "snowy": "Snowy",
+          "snowy-rainy": "Snow and rain",
+          "sunny": "Sunny",
+          "windy": "Windy",
+          "windy-variant": "Windy and cloudy"
+        }
+      }
+    }
+  }
+}

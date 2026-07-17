@@ -19,7 +19,8 @@ Integración comunitaria de Home Assistant para consultar datos meteorológicos 
 - Resúmenes diarios, mensuales y anuales.
 - Histórico consultado bajo demanda, sin importar datos antiguos al Recorder.
 - Caché y consultas agregadas para reducir el número de peticiones.
-
+- Posibilidad de añadir varias estaciones.
+- Cada estacion genera dos dispositivos: uno con los sensores actuales y el otro con los resumenes, medias, maximas y minimas
 ## Requisitos
 
 1. Home Assistant `2026.7.0` o posterior durante la fase beta.

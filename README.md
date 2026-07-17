@@ -63,7 +63,15 @@ Solo se crean entidades para las magnitudes realmente publicadas por la estació
 
 ## Tarjetas incluidas
 
-La integración registra automáticamente sus recursos frontend. Tras actualizarla, reinicia Home Assistant y fuerza una recarga completa del navegador.
+Los archivos JavaScript se sirven desde la propia integración. Para utilizar las tarjetas, añade estos tres recursos en **Ajustes > Paneles de control > menú de tres puntos > Recursos** con el tipo **Módulo JavaScript**:
+
+```text
+/euskalmet_static/euskalmet-alert-card.js?v=2.9.0-beta.1
+/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.1
+/euskalmet_static/euskalmet-radar-map-card.js?v=2.9.0-beta.1
+```
+
+La integración también intenta registrar estos recursos automáticamente, pero el alta manual evita problemas en instalaciones o paneles donde no aparezcan cargados. Después de añadirlos o actualizar la integración, reinicia Home Assistant y fuerza una recarga completa del navegador.
 
 ### Radar animado
 

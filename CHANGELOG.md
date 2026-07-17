@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.9.0-beta.4
+
+- Corrige todos los avisos de Ruff detectados por GitHub Actions.
+- Sustituye `timezone.utc` por el alias moderno `UTC`.
+- Normaliza los imports y la tabla de sensores estadísticos.
+- Mantiene autoplay, opacidad completa y animación a 8 fps en el radar.
+
 ## 2.9.0-beta.3
 
 - Incorpora la versión funcional `2.9.0-beta.3` de la integración.

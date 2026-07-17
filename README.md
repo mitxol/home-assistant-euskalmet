@@ -5,7 +5,7 @@ Integración comunitaria de Home Assistant para consultar datos meteorológicos 
 > [!IMPORTANT]
 > **Proyecto comunitario no oficial.** Esta integración ha sido desarrollada de forma independiente y no está afiliada, patrocinada, mantenida ni soportada por Euskalmet ni por el Gobierno Vasco. Los problemas relacionados con el componente deben comunicarse mediante los **Issues de este repositorio**, no a los canales de soporte de Euskalmet o del Gobierno Vasco.
 
-> Estado: **beta pública**. La versión `2.9.0-beta.3` está preparada para probarse mediante un repositorio personalizado de HACS.
+> Estado: **beta pública**. La versión `2.9.0-beta.4` está preparada para probarse mediante un repositorio personalizado de HACS.
 
 ## Funciones
 
@@ -66,9 +66,9 @@ Solo se crean entidades para las magnitudes realmente publicadas por la estació
 Los archivos JavaScript se sirven desde la propia integración. Para utilizar las tarjetas, añade estos tres recursos en **Ajustes > Paneles de control > menú de tres puntos > Recursos** con el tipo **Módulo JavaScript**:
 
 ```text
-/euskalmet_static/euskalmet-alert-card.js?v=2.9.0-beta.3
-/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.3
-/euskalmet_static/euskalmet-radar-map-card.js?v=2.9.0-beta.3
+/euskalmet_static/euskalmet-alert-card.js?v=2.9.0-beta.4
+/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.4
+/euskalmet_static/euskalmet-radar-map-card.js?v=2.9.0-beta.4
 ```
 
 La integración también intenta registrar estos recursos automáticamente, pero el alta manual evita problemas en instalaciones o paneles donde no aparezcan cargados. Después de añadirlos o actualizar la integración, reinicia Home Assistant y fuerza una recarga completa del navegador.

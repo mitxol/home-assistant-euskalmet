@@ -9,6 +9,7 @@ from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
@@ -26,7 +27,7 @@ PLATFORMS: list[Platform] = [
 ]
 
 FRONTEND_URL = "/euskalmet_static"
-FRONTEND_VERSION = "2.9.0-beta.1"
+FRONTEND_VERSION = "2.9.0-beta.3"
 FRONTEND_RESOURCES = (
     "euskalmet-radar-map-card.js",
     "euskalmet-alert-card.js",
@@ -34,6 +35,8 @@ FRONTEND_RESOURCES = (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def _async_register_frontend(hass: HomeAssistant) -> None:
@@ -71,7 +74,7 @@ async def async_setup(
     hass: HomeAssistant,
     config: ConfigType,
 ) -> bool:
-    """Aceptar la configuración YAML sin crear recursos globales."""
+    """Inicializar los recursos globales de la integración."""
 
     await _async_register_frontend(hass)
 

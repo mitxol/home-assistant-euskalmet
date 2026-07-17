@@ -31,10 +31,15 @@ class EuskalmetRadarMapCard extends HTMLElement {
     this._config = {
       opacity: 1,
       frame_interval: 125,
+      autoplay: true,
+      show_header: true,
+      show_controls: true,
+      show_options: true,
       ...config,
     };
     this._frameInterval = Number(this._config.frame_interval) || 125;
     this._ensureShell();
+    this._applyConfiguration();
     this._updateSpeedButton();
     this._syncFromState();
   }
@@ -253,6 +258,7 @@ class EuskalmetRadarMapCard extends HTMLElement {
         font-size: 13px;
       }
       .message.visible { display: block; }
+      [hidden] { display: none !important; }
       .leaflet-control-attribution { font-size: 11px; }
       @media (max-width: 560px) {
         .header { padding: 14px; }
@@ -347,6 +353,28 @@ class EuskalmetRadarMapCard extends HTMLElement {
     card.querySelector(".refresh").addEventListener("click", () => {
       this._refreshData();
     });
+
+    this._applyConfiguration();
+  }
+
+  _applyConfiguration() {
+    if (!this.shadowRoot || !this._config) {
+      return;
+    }
+    const visibility = {
+      ".header": this._config.show_header !== false,
+      ".map-controls": this._config.show_controls !== false,
+      ".options": this._config.show_options !== false,
+    };
+    for (const [selector, visible] of Object.entries(visibility)) {
+      const element = this.shadowRoot.querySelector(selector);
+      if (element) {
+        element.hidden = !visible;
+      }
+    }
+    if (this._config.autoplay !== true && this._playing) {
+      this._stopPlayback();
+    }
   }
 
   async _loadLeaflet() {
@@ -478,6 +506,9 @@ class EuskalmetRadarMapCard extends HTMLElement {
 
       await this._selectFrame(this._timeline.length - 1);
       this._preloadFrames();
+      if (this._config?.autoplay === true && !this._playing) {
+        await this._togglePlayback();
+      }
     } catch (error) {
       this._timeline = [];
       this.shadowRoot.querySelector(".summary").textContent = "Última captura disponible";

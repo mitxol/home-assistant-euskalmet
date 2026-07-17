@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.9.0-beta.3
+
+- Incorpora la versión funcional `2.9.0-beta.3` de la integración.
+- Añade `CONFIG_SCHEMA` para indicar que la integración solo se configura mediante Config Entries.
+- Actualiza a beta 3 los recursos JavaScript de avisos, históricos y radar.
+- Documenta el registro manual de los tres recursos en el README principal y en el README del frontend.
+- Ordena y completa `manifest.json` para las validaciones de Hassfest y HACS.
+- Actualiza las acciones de GitHub para usar Node.js 24.
+
 Todos los cambios relevantes se documentarán en este archivo.
 
 ## [2.9.0-beta.1] - 2026-07-16

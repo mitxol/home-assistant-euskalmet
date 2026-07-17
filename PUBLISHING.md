@@ -5,7 +5,7 @@ Este documento presupone:
 - usuario de GitHub: `mitxol`;
 - repositorio: `home-assistant-euskalmet`;
 - rama principal: `main`;
-- primera versión: `2.9.0-beta.1`.
+- primera versión: `2.9.0-beta.3`.
 
 Cambia estos valores antes de publicar si no son los definitivos.
 
@@ -29,7 +29,7 @@ Desde la raíz del proyecto:
 git init
 git branch -M main
 git add .
-git commit -m "Prepare Euskalmet 2.9.0-beta.1 for HACS"
+git commit -m "Prepare Euskalmet 2.9.0-beta.3 for HACS"
 git remote add origin https://github.com/mitxol/home-assistant-euskalmet.git
 git push -u origin main
 ```
@@ -60,8 +60,8 @@ En HACS:
 Cuando las validaciones estén en verde:
 
 ```bash
-git tag -a 2.9.0-beta.1 -m "Euskalmet 2.9.0-beta.1"
-git push origin 2.9.0-beta.1
+git tag -a 2.9.0-beta.3 -m "Euskalmet 2.9.0-beta.3"
+git push origin 2.9.0-beta.3
 ```
 
 Después crea una Release de GitHub usando esa etiqueta. Marca la release como **pre-release** y utiliza como notas la sección correspondiente de `CHANGELOG.md`.

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import math
 import unicodedata
+from collections.abc import Iterable
 from difflib import SequenceMatcher
-from typing import Any, Iterable
-
+from typing import Any
 
 MAX_STATION_DISTANCE_KM = 120.0
 METEOROLOGICAL_STATION_TYPE = "KM"

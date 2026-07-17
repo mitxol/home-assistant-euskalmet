@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import UTC, datetime, timedelta
 import logging
-from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -130,7 +130,7 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
 
         month_due = (
             self._month_summary_updated is None
-            or datetime.now(timezone.utc) - self._month_summary_updated
+            or datetime.now(UTC) - self._month_summary_updated
             >= timedelta(hours=1)
         )
         month_call = (
@@ -196,7 +196,7 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
         )
         if not isinstance(summary_month_result, Exception) and month_due:
             self._month_summary = summary_month
-            self._month_summary_updated = datetime.now(timezone.utc)
+            self._month_summary_updated = datetime.now(UTC)
         local_now = datetime.now(self.api.time_zone)
         self._year_months[local_now.month] = summary_month
         missing_months = [

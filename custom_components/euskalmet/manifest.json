@@ -1,24 +1,24 @@
 {
   "domain": "euskalmet",
   "name": "Euskalmet",
-  "codeowners": [
-    "@mitxol"
-  ],
+  "version": "2.9.0-beta.4",
   "config_flow": true,
+  "integration_type": "service",
+  "documentation": "https://github.com/",
+  "issue_tracker": "https://github.com/",
+  "requirements": [
+    "PyJWT",
+    "cryptography"
+  ],
   "dependencies": [
     "frontend",
     "http"
   ],
-  "documentation": "https://github.com/mitxol/home-assistant-euskalmet",
-  "integration_type": "service",
+  "codeowners": [
+    "@mitxol"
+  ],
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/mitxol/home-assistant-euskalmet/issues",
   "loggers": [
     "custom_components.euskalmet"
-  ],
-  "requirements": [
-    "PyJWT==2.12.1",
-    "cryptography==48.0.1"
-  ],
-  "version": "2.9.0-beta.3"
+  ]
 }

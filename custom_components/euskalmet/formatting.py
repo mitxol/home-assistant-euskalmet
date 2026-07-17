@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import Final
 
-
 WEATHER_CONDITION_ES: Final[dict[str, str]] = {
     "clear-night": "Despejado",
     "cloudy": "Nublado",

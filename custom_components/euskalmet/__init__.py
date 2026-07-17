@@ -16,8 +16,8 @@ from homeassistant.helpers.typing import ConfigType
 from .api import EuskalmetAPI, EuskalmetAPIError
 from .coordinator import EuskalmetCoordinator
 from .const import DOMAIN
-from .radar_websocket import async_register_websocket_commands
 from .history_websocket import async_register_history_websocket
+from .radar_websocket import async_register_websocket_commands
 
 PLATFORMS: list[Platform] = [
     Platform.BINARY_SENSOR,
@@ -27,7 +27,7 @@ PLATFORMS: list[Platform] = [
 ]
 
 FRONTEND_URL = "/euskalmet_static"
-FRONTEND_VERSION = "2.9.0-beta.3"
+FRONTEND_VERSION = "2.9.0-beta.4"
 FRONTEND_RESOURCES = (
     "euskalmet-radar-map-card.js",
     "euskalmet-alert-card.js",

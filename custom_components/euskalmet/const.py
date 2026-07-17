@@ -1,4 +1,5 @@
 from datetime import timedelta
+
 DOMAIN = "euskalmet"
 
 MANUFACTURER = "Euskalmet"

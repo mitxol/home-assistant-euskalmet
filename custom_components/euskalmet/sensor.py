@@ -5,47 +5,97 @@ from typing import Any
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN, MEASURES
 from .coordinator import EuskalmetCoordinator
+from .const import DOMAIN, MEASURES
 from .entity import device_info, summary_device_info
 from .formatting import degrees_to_compass
 
 PARALLEL_UPDATES = 0
 
-SUMMARY_SENSORS = (
-    ("precipitation_today", "Precipitación hoy", "summary_day", "precipitation", "total", "mm", "mdi:weather-rainy"),
-    ("temperature_min_today", "Temperatura mínima hoy", "summary_day", "temperature", "min", "°C", "mdi:thermometer-chevron-down"),
-    ("temperature_mean_today", "Temperatura media hoy", "summary_day", "temperature", "mean", "°C", "mdi:thermometer"),
-    ("temperature_max_today", "Temperatura máxima hoy", "summary_day", "temperature", "max", "°C", "mdi:thermometer-chevron-up"),
-    ("wind_gust_max_today", "Racha máxima hoy", "summary_day", "max_speed", "max", "km/h", "mdi:weather-windy"),
-    ("precipitation_month", "Precipitación este mes", "summary_month", "precipitation", "total", "mm", "mdi:weather-rainy"),
-    ("temperature_min_month", "Temperatura mínima del mes", "summary_month", "temperature", "min", "°C", "mdi:thermometer-chevron-down"),
-    ("temperature_mean_month", "Temperatura media del mes", "summary_month", "temperature", "mean", "°C", "mdi:thermometer"),
-    ("temperature_max_month", "Temperatura máxima del mes", "summary_month", "temperature", "max", "°C", "mdi:thermometer-chevron-up"),
-    ("wind_gust_max_month", "Racha máxima del mes", "summary_month", "max_speed", "max", "km/h", "mdi:weather-windy"),
-    ("humidity_min_today", "Humedad mínima hoy", "summary_day", "humidity", "min", "%", "mdi:water-percent"),
-    ("humidity_mean_today", "Humedad media hoy", "summary_day", "humidity", "mean", "%", "mdi:water-percent"),
-    ("humidity_max_today", "Humedad máxima hoy", "summary_day", "humidity", "max", "%", "mdi:water-percent"),
-    ("humidity_min_month", "Humedad mínima del mes", "summary_month", "humidity", "min", "%", "mdi:water-percent"),
-    ("humidity_mean_month", "Humedad media del mes", "summary_month", "humidity", "mean", "%", "mdi:water-percent"),
-    ("humidity_max_month", "Humedad máxima del mes", "summary_month", "humidity", "max", "%", "mdi:water-percent"),
-    ("pressure_min_today", "Presión mínima hoy", "summary_day", "pressure", "min", "hPa", "mdi:gauge"),
-    ("pressure_mean_today", "Presión media hoy", "summary_day", "pressure", "mean", "hPa", "mdi:gauge"),
-    ("pressure_max_today", "Presión máxima hoy", "summary_day", "pressure", "max", "hPa", "mdi:gauge"),
-    ("pressure_min_month", "Presión mínima del mes", "summary_month", "pressure", "min", "hPa", "mdi:gauge"),
-    ("pressure_mean_month", "Presión media del mes", "summary_month", "pressure", "mean", "hPa", "mdi:gauge"),
-    ("pressure_max_month", "Presión máxima del mes", "summary_month", "pressure", "max", "hPa", "mdi:gauge"),
-    ("irradiance_mean_today", "Radiación solar media hoy", "summary_day", "irradiance", "mean", "W/m²", "mdi:white-balance-sunny"),
-    ("irradiance_max_today", "Radiación solar máxima hoy", "summary_day", "irradiance", "max", "W/m²", "mdi:white-balance-sunny"),
-    ("irradiance_mean_month", "Radiación solar media del mes", "summary_month", "irradiance", "mean", "W/m²", "mdi:white-balance-sunny"),
-    ("irradiance_max_month", "Radiación solar máxima del mes", "summary_month", "irradiance", "max", "W/m²", "mdi:white-balance-sunny"),
-    ("wind_speed_mean_today", "Velocidad media del viento hoy", "summary_day", "mean_speed", "mean", "km/h", "mdi:weather-windy"),
-    ("wind_speed_mean_month", "Velocidad media del viento del mes", "summary_month", "mean_speed", "mean", "km/h", "mdi:weather-windy"),
+SUMMARY_SENSOR_SPECS = (
+    (
+        "precipitation",
+        "Precipitación",
+        "precipitation",
+        (("total", ""),),
+        "mm",
+        "mdi:weather-rainy",
+    ),
+    (
+        "temperature",
+        "Temperatura",
+        "temperature",
+        (("min", "mínima"), ("mean", "media"), ("max", "máxima")),
+        "°C",
+        "mdi:thermometer",
+    ),
+    (
+        "wind_gust",
+        "Racha",
+        "max_speed",
+        (("max", "máxima"),),
+        "km/h",
+        "mdi:weather-windy",
+    ),
+    (
+        "humidity",
+        "Humedad",
+        "humidity",
+        (("min", "mínima"), ("mean", "media"), ("max", "máxima")),
+        "%",
+        "mdi:water-percent",
+    ),
+    (
+        "pressure",
+        "Presión",
+        "pressure",
+        (("min", "mínima"), ("mean", "media"), ("max", "máxima")),
+        "hPa",
+        "mdi:gauge",
+    ),
+    (
+        "irradiance",
+        "Radiación solar",
+        "irradiance",
+        (("mean", "media"), ("max", "máxima")),
+        "W/m²",
+        "mdi:white-balance-sunny",
+    ),
+    (
+        "wind_speed",
+        "Velocidad del viento",
+        "mean_speed",
+        (("mean", "media"),),
+        "km/h",
+        "mdi:weather-windy",
+    ),
+)
+
+SUMMARY_SENSORS = tuple(
+    (
+        f"{prefix}_{field}_{suffix}" if label else f"{prefix}_{suffix}",
+        " ".join(part for part in (name, label, period_label) if part),
+        section,
+        measure,
+        field,
+        unit,
+        icon,
+    )
+    for prefix, name, measure, fields, unit, icon in SUMMARY_SENSOR_SPECS
+    for field, label in fields
+    for section, suffix, period_label in (
+        ("summary_day", "today", "hoy"),
+        (
+            "summary_month",
+            "month",
+            "este mes" if prefix == "precipitation" else "del mes",
+        ),
+    )
 )
 
 SUMMARY_MEASURE_TYPES = {
@@ -71,7 +121,9 @@ SUMMARY_REQUIRED_KEYS = {
 ANNUAL_SUMMARY_SENSORS = tuple(
     (
         key.replace("_today", "_year").replace("_month", "_year"),
-        name.replace(" hoy", " este año").replace(" del mes", " del año").replace(" este mes", " este año"),
+        name.replace(" hoy", " este año")
+        .replace(" del mes", " del año")
+        .replace(" este mes", " este año"),
         "summary_year",
         measure,
         field,

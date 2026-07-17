@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
 import re
-from typing import Any, Mapping
-
+from collections.abc import Mapping
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 _WIND_MEASURES_IN_METERS_PER_SECOND = {"mean_speed", "max_speed"}
 _AGGREGATED_READING_DATE = re.compile(
     r"/at/(\d{4})/(\d{2})/(\d{2})/(\d{2})$"
 )
 _AGGREGATED_PUBLICATION_DELAY = timedelta(minutes=15)
+
 
 def _numeric_value(value: object) -> float | int | None:
     """Normalizar un valor numérico publicado por Euskalmet."""
@@ -192,7 +193,7 @@ def _aggregated_slot_times(
                 int(parts[1]),
                 int(parts[2]),
                 int(parts[3].ljust(6, "0")) if len(parts) > 3 else 0,
-                tzinfo=timezone.utc,
+                tzinfo=UTC,
             )
 
         return build(start_raw), build(end_raw)
@@ -220,7 +221,7 @@ def parse_aggregated_readings(
         ): key
         for key, config in measures.items()
     }
-    now_utc = now.astimezone(timezone.utc)
+    now_utc = now.astimezone(UTC)
     candidates: dict[
         str, list[tuple[datetime, float | int, str, str]]
     ] = {}

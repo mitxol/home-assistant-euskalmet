@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import base64
+from contextlib import suppress
+from datetime import UTC, datetime, timedelta
 import logging
 import time
-from datetime import datetime, timedelta, timezone
 from typing import Any
 from urllib.parse import quote
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -82,7 +83,7 @@ def _slot_start(
         # Aunque la API denomina este campo ``LocalTime``, las lecturas
         # de estaciones y la hora del endpoint avanzan en UTC.
         observed_datetime = request_hour.astimezone(
-            timezone.utc
+            UTC
         ).replace(
             hour=hour,
             minute=minute,
@@ -113,8 +114,8 @@ def _add_freshness(
             "from_cache": from_cache,
         }
 
-    observed_utc = observed_at.astimezone(timezone.utc)
-    now_utc = now.astimezone(timezone.utc)
+    observed_utc = observed_at.astimezone(UTC)
+    now_utc = now.astimezone(UTC)
     age = now_utc - observed_utc
 
     return {
@@ -161,7 +162,7 @@ class EuskalmetAPI:
         try:
             self.time_zone = ZoneInfo(time_zone)
         except ZoneInfoNotFoundError:
-            self.time_zone = timezone.utc
+            self.time_zone = UTC
 
         self.station_id = station_id
         self.station_name = station_name
@@ -243,7 +244,7 @@ class EuskalmetAPI:
     def _utcnow() -> datetime:
         """Devolver la hora UTC actual; aislado para pruebas."""
 
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
     async def _request(self, url: str) -> Any:
         """Realizar una petición autenticada."""
@@ -789,10 +790,8 @@ class EuskalmetAPI:
         raw_observed_at = cached.get("observed_at")
 
         if isinstance(raw_observed_at, str):
-            try:
+            with suppress(ValueError):
                 observed_at = datetime.fromisoformat(raw_observed_at)
-            except ValueError:
-                pass
 
         return _add_freshness(
             cached,
@@ -1190,7 +1189,7 @@ class EuskalmetAPI:
             report_date.year,
             report_date.month,
             report_date.day,
-            tzinfo=timezone.utc,
+            tzinfo=UTC,
         )
 
         return (midnight_utc + timedelta(seconds=seconds)).isoformat()

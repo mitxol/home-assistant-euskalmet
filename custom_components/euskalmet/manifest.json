@@ -1,24 +1,24 @@
 {
   "domain": "euskalmet",
   "name": "Euskalmet",
-  "version": "2.9.0-beta.4",
-  "config_flow": true,
-  "integration_type": "service",
-  "documentation": "https://github.com/",
-  "issue_tracker": "https://github.com/",
-  "requirements": [
-    "PyJWT",
-    "cryptography"
+  "codeowners": [
+    "@mitxol"
   ],
+  "config_flow": true,
   "dependencies": [
     "frontend",
     "http"
   ],
-  "codeowners": [
-    "@mitxol"
-  ],
-  "iot_class": "cloud_polling",
+  "documentation": "https://github.com/",
+  "integration_type": "service",
+  "io_class": "cloud_polling",
+  "issue_tracker": "https://github.com/",
   "loggers": [
     "custom_components.euskalmet"
-  ]
+  ],
+  "requirements": [
+    "PyJWT",
+    "cryptography"
+  ],
+  "version": "2.9.0-beta.4"
 }

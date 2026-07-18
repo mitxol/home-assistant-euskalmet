@@ -78,10 +78,12 @@ La integración también intenta registrar estos recursos automáticamente, pero
 
 ```yaml
 type: custom:euskalmet-radar-map-card
-entity: camera.radar_de_precipitacion
-title: Radar Euskalmet
-opacity: 1
-frame_interval: 125
+entity: camera.TU_ESTACION_radar_de_precipitacion
+autoplay: true
+show_header: false
+show_controls: false
+show_options: false
+
 ```
 
 ### Avisos meteorológicos

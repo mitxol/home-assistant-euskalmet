@@ -85,13 +85,13 @@ se reutilice una copia antigua de la caché.
 ### Radar animado
 
 ```yaml
-type: custom:weather-radar-card
+type: custom:weather-radar-card-euskalmet
 data_source: Euskalmet
-map_style: OSM
+map_style: Light
 radar_opacity: 1
-past_minutes: 120
+past_minutes: 360
 show_color_bar: false
-autoplay: true
+zoom_level: 7
 ```
 
 La tarjeta obtiene los fotogramas autenticados a través de la integración. No

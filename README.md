@@ -122,6 +122,27 @@ Los avisos pueden mostrarse sin JavaScript adicional mediante una tarjeta de
 entidad o una tarjeta Markdown/template utilizando `sensor.nivel_de_aviso` o
 `binary_sensor.aviso_meteorologico`.
 
+```yaml
+type: markdown
+title: Avisos meteorológicos
+entity_id:
+  - binary_sensor.TU_ESTACION_aviso_meteorologico
+content: |-
+  {% set entity = 'binary_sensor.TU_ESTACION_aviso_meteorologico' %}
+  {% if is_state(entity, 'on') %}
+  ## ⚠️ Aviso meteorológico
+
+  **Nivel:** {{ state_attr(entity, 'severity') | default('desconocido') }}
+
+  {% for description in state_attr(entity, 'descriptions') or [] %}
+  - {{ description }}
+  {% endfor %}
+  {% else %}
+  ✅ No hay avisos meteorológicos activos.
+  {% endif %}
+```
+
+
 ## Actualización y tolerancia a fallos
 
 Las observaciones actuales se consultan mediante el endpoint agregado diario

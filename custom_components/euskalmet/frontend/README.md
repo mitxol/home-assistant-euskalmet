@@ -1,37 +1,53 @@
 # Tarjetas de Euskalmet
 
-La integración publica y carga automáticamente sus tarjetas desde
-`/euskalmet_static/`. Después de actualizar, reinicia Home Assistant y fuerza
-una recarga del navegador para descartar recursos antiguos de la caché.
+La integración publica sus tarjetas desde `/euskalmet_static/`. Después de
+actualizar, cambia el parámetro de versión del recurso y fuerza una recarga del
+navegador para descartar archivos antiguos de la caché.
 
-## Radar animado
+## Radar animado recomendado
 
-Añade una tarjeta manual:
+Recurso:
 
-```yaml
-type: custom:euskalmet-radar-map-card
-entity: camera.radar_de_precipitacion
-title: Radar Euskalmet
-opacity: 1
-frame_interval: 125
-autoplay: true
-show_header: true
-show_controls: true
-show_options: true
+```text
+/euskalmet_static/weather-radar-card-euskalmet.js?v=2.9.0-beta.12
 ```
 
-La cámara normal conserva la última captura como vista previa. La tarjeta
-personalizada añade el mapa OpenStreetMap desaturado, la paleta oficial, la
-línea temporal y la animación de todos los fotogramas del informe diario.
+Tarjeta:
+
+```yaml
+type: custom:weather-radar-card
+data_source: Euskalmet
+map_style: OSM
+radar_opacity: 1
+past_minutes: 120
+show_color_bar: false
+autoplay: true
+```
+
+La cámara conserva la última captura como vista previa. La tarjeta añade el
+mapa OpenStreetMap, la línea temporal y la animación sin perder el anclaje
+geográfico de la capa de precipitación.
+
+## Histórico
+
+Recurso:
+
+```text
+/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.12
+```
+
+Tarjeta:
+
+```yaml
+type: custom:euskalmet-history-card
+entity: sensor.arkauti_temperatura
+```
+
+Los datos se consultan bajo demanda y no se importan al Recorder.
 
 ## Avisos meteorológicos
 
-Añade una tarjeta manual con uno de los sensores de avisos:
+Los avisos pueden mostrarse mediante una tarjeta de entidad o template usando
+`sensor.nivel_de_aviso` o `binary_sensor.aviso_meteorologico`, sin necesidad de
+añadir un recurso JavaScript.
 
-```yaml
-type: custom:euskalmet-alert-card
-entity: sensor.nivel_de_aviso
-```
-
-También se puede usar `binary_sensor.aviso_meteorologico`. La tarjeta adapta el
-color al nivel máximo y muestra debajo la descripción de cada riesgo activo.

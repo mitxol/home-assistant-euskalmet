@@ -24,18 +24,10 @@ async def async_setup_entry(
     """Configurar la cámara de radar de Euskalmet."""
 
     coordinator = entry.runtime_data
-
-    async_add_entities(
-        [
-            EuskalmetRadarCamera(coordinator),
-        ]
-    )
+    async_add_entities([EuskalmetRadarCamera(coordinator)])
 
 
-class EuskalmetRadarCamera(
-    CoordinatorEntity,
-    Camera,
-):
+class EuskalmetRadarCamera(CoordinatorEntity, Camera):
     """Cámara con la última imagen del radar de precipitación."""
 
     _attr_has_entity_name = True
@@ -45,7 +37,6 @@ class EuskalmetRadarCamera(
     def __init__(self, coordinator: EuskalmetCoordinator) -> None:
         CoordinatorEntity.__init__(self, coordinator)
         Camera.__init__(self)
-
         self._attr_unique_id = (
             f"{coordinator.api.station_id}_precipitation_radar"
         )
@@ -59,63 +50,36 @@ class EuskalmetRadarCamera(
 
     @property
     def available(self) -> bool:
-        if not super().available:
+        if not super().available or self.coordinator.data is None:
             return False
-
-        if self.coordinator.data is None:
-            return False
-
-        radar = self.coordinator.data.get(
-            "radar",
-            {},
-        )
-
-        return bool(
-            radar.get("available")
-            and radar.get("image")
-        )
+        radar = self.coordinator.data.get("radar", {})
+        return bool(radar.get("available") and radar.get("image"))
 
     async def async_camera_image(
         self,
         width: int | None = None,
         height: int | None = None,
     ) -> bytes | None:
-        """Devolver la última imagen del radar."""
+        """Devolver el PNG original más reciente de Euskalmet."""
 
         if self.coordinator.data is None:
             return None
-
-        radar = self.coordinator.data.get(
-            "radar",
-            {},
-        )
-
-        return radar.get("image")
+        image = self.coordinator.data.get("radar", {}).get("image")
+        return image if isinstance(image, bytes) and image else None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         if self.coordinator.data is None:
             return {}
-
-        radar = self.coordinator.data.get(
-            "radar",
-            {},
-        )
-
+        radar = self.coordinator.data.get("radar", {})
         return {
-            "available": radar.get(
-                "available",
-                False,
-            ),
+            "available": radar.get("available", False),
             "range": radar.get("range"),
             "timestamp": radar.get("timestamp"),
             "date": radar.get("date"),
             "report_type": radar.get("report_type"),
             "report": radar.get("report"),
-            "frame_count": radar.get(
-                "frame_count",
-                0,
-            ),
+            "frame_count": radar.get("frame_count", 0),
             "bounds": RADAR_BOUNDS,
             "center": RADAR_CENTER,
             "range_km": RADAR_RANGE_KM,

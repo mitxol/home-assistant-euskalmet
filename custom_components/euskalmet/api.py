@@ -860,10 +860,12 @@ class EuskalmetAPI:
         )
         return await self._request(url)
 
-    async def get_aggregated_day_summary(self) -> Any:
-        """Obtener el resumen agregado del día actual."""
+    async def get_aggregated_day_summary(
+        self, date: datetime | None = None
+    ) -> Any:
+        """Obtener el resumen agregado de un día."""
 
-        date = datetime.now(self.time_zone)
+        date = date or datetime.now(self.time_zone)
         return await self._request(
             f"{API_BASE}/readings/aggregated/summarized/byDay/"
             f"forStation/{self.station_id}/at/{date:%Y/%m/%d}"

@@ -6,7 +6,7 @@ import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.core import HomeAssistant, callback
 
-from .const import DOMAIN
+from .const import DOMAIN, RADAR_BOUNDS
 
 
 @websocket_api.websocket_command(
@@ -54,6 +54,7 @@ def websocket_radar_frames(
             {
                 "entry_id": coordinator.config_entry_id,
                 "count": len(frames),
+                "bounds": RADAR_BOUNDS,
                 "frames": [
                     {
                         "index": index,

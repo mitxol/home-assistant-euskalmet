@@ -4,7 +4,6 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -27,20 +26,13 @@ PLATFORMS: list[Platform] = [
 ]
 
 FRONTEND_URL = "/euskalmet_static"
-FRONTEND_VERSION = "2.9.0-beta.4"
-FRONTEND_RESOURCES = (
-    "euskalmet-radar-map-card.js",
-    "euskalmet-alert-card.js",
-    "euskalmet-history-card.js",
-)
-
 _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def _async_register_frontend(hass: HomeAssistant) -> None:
-    """Publicar los recursos locales de la tarjeta de radar."""
+    """Publicar los recursos frontend opcionales sin cargarlos globalmente."""
 
     domain_data = hass.data.setdefault(DOMAIN, {})
 
@@ -61,12 +53,6 @@ async def _async_register_frontend(hass: HomeAssistant) -> None:
     async_register_websocket_commands(hass)
     async_register_history_websocket(hass)
 
-    for resource in FRONTEND_RESOURCES:
-        add_extra_js_url(
-            hass,
-            f"{FRONTEND_URL}/{resource}?v={FRONTEND_VERSION}",
-        )
-
     domain_data["frontend_registered"] = True
 
 
@@ -77,7 +63,6 @@ async def async_setup(
     """Inicializar los recursos globales de la integración."""
 
     await _async_register_frontend(hass)
-
     return True
 
 
@@ -88,7 +73,6 @@ async def async_setup_entry(
     """Configurar Euskalmet desde una entrada de configuración."""
 
     await _async_register_frontend(hass)
-
     coordinator = EuskalmetCoordinator(
         hass=hass,
         email=entry.data["email"],

@@ -1,149 +1,175 @@
 # Euskalmet para Home Assistant
 
-Integración comunitaria de Home Assistant para consultar datos meteorológicos de Euskalmet / Open Data Euskadi.
+Integración comunitaria de Home Assistant para consultar datos meteorológicos
+de Euskalmet y Open Data Euskadi.
 
 > [!IMPORTANT]
-> **Proyecto comunitario no oficial.** Esta integración ha sido desarrollada de forma independiente y no está afiliada, patrocinada, mantenida ni soportada por Euskalmet ni por el Gobierno Vasco. Los problemas relacionados con el componente deben comunicarse mediante los **Issues de este repositorio**, no a los canales de soporte de Euskalmet o del Gobierno Vasco.
+> **Proyecto comunitario no oficial.** No está afiliado, patrocinado,
+> mantenido ni soportado por Euskalmet ni por el Gobierno Vasco. Comunica los
+> problemas mediante los **Issues de este repositorio**, no mediante los
+> canales de soporte de Euskalmet.
 
-> Estado: **beta pública**. La versión `2.9.0-beta.4` está preparada para probarse mediante un repositorio personalizado de HACS.
+> Estado: **beta pública**. La versión actual es `2.9.0-beta.12`.
 
 ## Funciones
 
 - Configuración completa desde la interfaz de Home Assistant.
 - Selección de estaciones meteorológicas oficiales activas.
-- Sensores dinámicos según las magnitudes disponibles en cada estación.
-- Temperatura, humedad, presión, viento, racha, dirección, radiación y precipitación.
+- Sensores dinámicos para las magnitudes publicadas por cada estación.
+- Temperatura, humedad, presión, viento, racha, dirección, radiación y
+  precipitación.
 - Entidad meteorológica con condiciones actuales y previsión horaria y diaria.
 - Avisos meteorológicos filtrados para la zona de la estación.
-- Radar de precipitación de Kapildui con animación sobre mapa.
-- Resúmenes diarios, mensuales y anuales.
-- Histórico consultado bajo demanda, sin importar datos antiguos al Recorder.
-- Caché y consultas agregadas para reducir el número de peticiones.
-- Posibilidad de añadir varias estaciones.
-- Cada estacion genera dos dispositivos: uno con los sensores actuales y el otro con los resumenes, medias, maximas y minimas
+- Radar animado de Kapildui sobre un mapa OpenStreetMap desaturado.
+- Resúmenes diarios, mensuales y anuales en un dispositivo estadístico separado.
+- Histórico consultado bajo demanda, sin importar datos antiguos a Recorder.
+- Caché y endpoints agregados para reducir el número de peticiones a la API.
+- Conservación del último valor válido ante respuestas temporales incompletas.
+
 ## Requisitos
 
 1. Home Assistant `2026.7.0` o posterior durante la fase beta.
-2. HACS, para la instalación recomendada.
-3. Credenciales personales de acceso a la API de Euskalmet (se pueden conseguir en: https://api.euskadi.eus/opendata-apikey/)
-   - correo electrónico;
-   - clave privada;
-     
+2. HACS para la instalación recomendada.
+3. Credenciales personales de acceso a la API de Euskalmet: correo
+   electrónico, clave privada y `login_id` cuando corresponda.
 
-La integración no incluye credenciales compartidas ni claves incorporadas. El JWT se firma localmente mediante RS256 en la instalación de Home Assistant del usuario.
+La integración no incorpora credenciales compartidas. El JWT se firma
+localmente mediante RS256 en la instalación de Home Assistant del usuario.
 
 ## Instalación mediante HACS
 
 Hasta que la integración entre en el catálogo predeterminado:
 
-1. Abre HACS.
-2. Entra en **Integraciones**.
-3. Abre el menú de tres puntos.
-4. Selecciona **Repositorios personalizados**.
-5. Añade `https://github.com/mitxol/home-assistant-euskalmet`.
-6. Selecciona la categoría **Integration**.
-7. Instala Euskalmet y reinicia Home Assistant.
-
-Después del reinicio, ve a **Ajustes > Dispositivos y servicios > Añadir integración** y busca **Euskalmet**.
+1. Abre HACS y entra en **Integraciones**.
+2. Abre el menú de tres puntos y selecciona **Repositorios personalizados**.
+3. Añade `https://github.com/mitxol/home-assistant-euskalmet` como
+   **Integration**.
+4. Activa **Mostrar versiones beta**, instala Euskalmet y reinicia Home Assistant.
+5. Ve a **Ajustes > Dispositivos y servicios > Añadir integración** y busca
+   **Euskalmet**.
 
 ## Instalación manual
 
-Copia la carpeta:
-
-```text
-custom_components/euskalmet
-```
-
-en la carpeta `custom_components` de tu configuración de Home Assistant y reinicia Home Assistant.
+Copia `custom_components/euskalmet` dentro de la carpeta `custom_components`
+de Home Assistant y reinicia.
 
 ## Configuración
 
-El asistente solicita primero las credenciales y después muestra las estaciones meteorológicas activas. Cada estación se configura como una entrada independiente y crea dispositivos separados para observación y estadísticas.
+El asistente solicita las credenciales y después muestra las estaciones
+meteorológicas activas. Cada estación se configura como una entrada
+independiente. La integración crea un dispositivo para las observaciones
+actuales y otro para resúmenes y estadísticas.
 
-Solo se crean entidades para las magnitudes realmente publicadas por la estación seleccionada.
+Solo se crean entidades para las magnitudes publicadas por la estación.
 
-## Tarjetas incluidas
+## Tarjetas
 
-Los archivos JavaScript se sirven desde la propia integración. Para utilizar las tarjetas, añade estos tres recursos en **Ajustes > Paneles de control > menú de tres puntos > Recursos** con el tipo **Módulo JavaScript**:
+Los archivos JavaScript se sirven desde la propia integración. Añade los
+recursos que vayas a utilizar en **Ajustes > Paneles de control > menú de tres
+puntos > Recursos**, con tipo **Módulo JavaScript**:
 
 ```text
-/euskalmet_static/euskalmet-alert-card.js?v=2.9.0-beta.4
-/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.4
-/euskalmet_static/euskalmet-radar-map-card.js?v=2.9.0-beta.4
+/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.12
+/euskalmet_static/weather-radar-card-euskalmet.js?v=2.9.0-beta.12
 ```
 
-La integración también intenta registrar estos recursos automáticamente, pero el alta manual evita problemas en instalaciones o paneles donde no aparezcan cargados. Después de añadirlos o actualizar la integración, reinicia Home Assistant y fuerza una recarga completa del navegador.
+No cargues al mismo tiempo otra copia de `weather-radar-card.js`, ya sea desde
+`/local/community/` o desde HACS. Ambas registrarían el mismo elemento
+`custom:weather-radar-card`. Elimina o desactiva el recurso anterior antes de
+añadir el incluido en Euskalmet.
+
+Después de actualizar un recurso, cierra y vuelve a abrir la aplicación móvil
+o fuerza una recarga completa del navegador. El parámetro de versión evita que
+se reutilice una copia antigua de la caché.
 
 ### Radar animado
 
 ```yaml
-type: custom:euskalmet-radar-map-card
-entity: camera.TU_ESTACION_radar_de_precipitacion
+type: custom:weather-radar-card
+data_source: Euskalmet
+map_style: OSM
+radar_opacity: 1
+past_minutes: 120
+show_color_bar: false
 autoplay: true
-show_header: false
-show_controls: false
-show_options: false
-
 ```
 
-### Avisos meteorológicos
+La tarjeta obtiene los fotogramas autenticados a través de la integración. No
+expone las credenciales de Euskalmet al navegador. La capa utiliza los límites
+geográficos publicados por el visor oficial de Kapildui y permanece anclada al
+mapa al desplazarlo, ampliarlo, reproducirlo o pausarlo.
+
+Si hay varias entradas de Euskalmet puede indicarse la deseada mediante:
 
 ```yaml
-type: custom:euskalmet-alert-card
-entity: sensor.nivel_de_aviso
+euskalmet_entry_id: ID_DE_LA_ENTRADA
 ```
-
-También puede usarse `binary_sensor.aviso_meteorologico`.
 
 ### Histórico meteorológico
 
-Añade la tarjeta manual y selecciona una entidad de la estación. La información histórica se solicita únicamente al visualizar el periodo elegido y no se copia al Recorder.
-
 ```yaml
 type: custom:euskalmet-history-card
-entity: sensor.temperatura
+entity: sensor.arkauti_temperatura
 ```
+
+La tarjeta consulta los resúmenes de Euskalmet al visualizar el periodo. Los
+datos históricos no se copian al Recorder ni se mezclan con las estadísticas
+de larga duración de Home Assistant.
+
+### Avisos meteorológicos
+
+Los avisos pueden mostrarse sin JavaScript adicional mediante una tarjeta de
+entidad o una tarjeta Markdown/template utilizando `sensor.nivel_de_aviso` o
+`binary_sensor.aviso_meteorologico`.
 
 ## Actualización y tolerancia a fallos
 
-Las observaciones se actualizan mediante los endpoints agregados recomendados por Euskalmet. Previsión, avisos, radar y estadísticas se tratan como fuentes opcionales: un fallo temporal de una de ellas no impide que el resto de la integración siga funcionando.
+Las observaciones actuales se consultan mediante el endpoint agregado diario
+recomendado por Euskalmet. Previsión, avisos, radar y resúmenes se tratan como
+fuentes opcionales: un fallo temporal de una fuente no impide actualizar las
+demás.
 
-La integración utiliza caché para resúmenes mensuales y anuales y conserva rutas anteriores únicamente como respaldo.
+Los resúmenes mensuales se almacenan en caché y los anuales se calculan a partir
+de los meses disponibles. Las rutas individuales anteriores se conservan como
+respaldo cuando resulta necesario.
 
 ## Privacidad y seguridad
 
 - Cada usuario aporta sus propias credenciales.
 - La clave privada se almacena en la entrada de configuración de Home Assistant.
-- No se envía la clave privada a este proyecto ni a terceros.
+- La clave privada no se envía a este proyecto ni a terceros.
 - El JWT se firma localmente y se renueva cuando corresponde.
-- Antes de compartir diagnósticos o registros, revisa que no contengan información personal.
+- Revisa los diagnósticos y registros antes de compartirlos.
 
 ## Solución de problemas
 
 Antes de abrir una incidencia:
 
-1. Actualiza a la última release.
-2. Reinicia Home Assistant.
-3. Fuerza una recarga completa del navegador si fallan las tarjetas.
-4. Comprueba que tus credenciales siguen vigentes.
-5. Adjunta la versión de Home Assistant, la versión de la integración y los registros relevantes, sin incluir claves privadas.
+1. Actualiza a la última release y reinicia Home Assistant.
+2. Comprueba que las credenciales continúan vigentes.
+3. Actualiza el parámetro `?v=` de los recursos JavaScript.
+4. Fuerza una recarga completa o prueba en una ventana privada.
+5. Indica las versiones de Home Assistant y de la integración y adjunta los
+   registros relevantes, sin claves privadas.
 
-Las incidencias se gestionan en el apartado **Issues** del repositorio.
+## Fuente de datos, marca y atribuciones
 
-## Fuente de datos y atribuciones
+Los datos proceden de **Euskalmet — Agencia Vasca de Meteorología** a través de
+**Open Data Euskadi**. Este repositorio no utiliza el logotipo oficial de
+Euskalmet ni símbolos institucionales como identidad visual.
 
-Los datos meteorológicos utilizados por esta integración son proporcionados por **Euskalmet — Agencia Vasca de Meteorología** a través de **Open Data Euskadi**.
-
-Esta integración es un proyecto comunitario independiente. No es un producto oficial de Euskalmet ni del Gobierno Vasco y no cuenta con soporte institucional. Para informar de errores o solicitar mejoras, utiliza los **Issues de este repositorio**.
-
-El logotipo oficial de Euskalmet y los símbolos institucionales del Gobierno Vasco no se utilizan como identidad visual de la integración, del repositorio ni de HACS. El proyecto empleará una marca comunitaria propia. El logotipo oficial de Euskalmet podrá aparecer únicamente en la documentación, dentro de una sección claramente dedicada a la procedencia de los datos y respetando las condiciones indicadas por Euskalmet.
-
-Leaflet se distribuye con su licencia BSD-2-Clause y los mapas de OpenStreetMap conservan su atribución visible.
+La tarjeta de radar se basa en el proyecto comunitario
+[Weather Radar Card](https://github.com/jpettitt/weather-radar-card) y conserva
+su licencia MIT. Leaflet mantiene su licencia BSD-2-Clause y los mapas de
+OpenStreetMap muestran su atribución. Los datos de radar se atribuyen a
+Euskalmet.
 
 ## Desarrollo
 
-Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para preparar el entorno, ejecutar validaciones y proponer cambios.
+Consulta [CONTRIBUTING.md](CONTRIBUTING.md) para preparar el entorno y ejecutar
+las validaciones.
 
 ## Licencia
 
-El código propio de esta integración se publica bajo licencia MIT. Los componentes de terceros incluidos conservan sus respectivas licencias.
+El código propio se publica bajo licencia MIT. Los componentes de terceros
+incluidos conservan sus respectivas licencias.

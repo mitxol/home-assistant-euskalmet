@@ -38,9 +38,14 @@ class EuskalmetHistoryCard extends HTMLElement {
     const request = (this.request || 0) + 1;
     this.request = request;
     try {
+      const entityState = this.config.entity
+        ? this._hass.states[this.config.entity]
+        : undefined;
+      const stationId = entityState?.attributes?.station;
       const data = await this._hass.callWS({
         type: "euskalmet/history",
         entry_id: this.config.entry_id,
+        station_id: stationId,
         year: this.date.getFullYear(),
         month: this.date.getMonth() + 1,
       });

@@ -16,6 +16,7 @@ from .const import DOMAIN
     {
         vol.Required("type"): "euskalmet/history",
         vol.Optional("entry_id"): str,
+        vol.Optional("station_id"): str,
         vol.Required("year"): vol.Coerce(int),
         vol.Required("month"): vol.All(vol.Coerce(int), vol.Range(min=1, max=12)),
     }
@@ -28,20 +29,27 @@ async def websocket_history(
 
     coordinators = hass.data.get(DOMAIN, {}).get("coordinators", {})
     entry_id = msg.get("entry_id")
-    coordinator = (
-        coordinators.get(entry_id)
-        if entry_id
-        else next(iter(coordinators.values()), None)
-        if len(coordinators) == 1
-        else None
-    )
+    station_id = msg.get("station_id")
+    if entry_id:
+        coordinator = coordinators.get(entry_id)
+    elif station_id:
+        coordinator = next(
+            (
+                item
+                for item in coordinators.values()
+                if item.api.station_id == station_id
+            ),
+            None,
+        )
+    elif len(coordinators) == 1:
+        coordinator = next(iter(coordinators.values()))
+    else:
+        coordinator = None
     if coordinator is None:
         connection.send_error(msg["id"], "entry_not_found", "Entrada no encontrada")
         return
     try:
-        date = datetime(
-            msg["year"], msg["month"], 1, tzinfo=coordinator.api.time_zone
-        )
+        date = datetime(msg["year"], msg["month"], 1, tzinfo=coordinator.api.time_zone)
         document = await coordinator.api.get_aggregated_month_summary(date)
     except Exception as err:
         connection.send_error(msg["id"], "history_unavailable", str(err))

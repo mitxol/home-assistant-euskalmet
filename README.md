@@ -16,7 +16,7 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Estado: **beta pública**. La versión actual es `2.9.0-beta.14`.
+> Estado: **beta pública**. La versión actual es `2.9.0-beta.15`.
 
 ## Funciones
 
@@ -79,17 +79,19 @@ recursos que vayas a utilizar en **Ajustes > Paneles de control > menú de tres
 puntos > Recursos**, con tipo **Módulo JavaScript**:
 
 ```text
-/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.14
-/euskalmet_static/weather-radar-card-euskalmet.js?v=2.9.0-beta.14
+/euskalmet_static/euskalmet-history-card.js?v=2
+/euskalmet_static/weather-radar-card-euskalmet.js?v=3
 ```
 
 La adaptación registra `custom:weather-radar-card-euskalmet`, por lo que puede
 coexistir con la tarjeta original `custom:weather-radar-card` si también la
 utilizas con otras fuentes.
 
-Después de actualizar un recurso, cierra y vuelve a abrir la aplicación móvil
-o fuerza una recarga completa del navegador. El parámetro de versión evita que
-se reutilice una copia antigua de la caché.
+Las revisiones `v=2` y `v=3` pertenecen a cada archivo JavaScript, no a la
+versión de la integración. No hay que modificarlas en cada actualización:
+solamente cambiarán cuando se publique una revisión real de la tarjeta. Después
+de ese cambio, cierra y vuelve a abrir la aplicación móvil o fuerza una recarga
+completa del navegador.
 
 ### Radar animado
 
@@ -108,7 +110,9 @@ expone las credenciales de Euskalmet al navegador. La capa utiliza los límites
 geográficos publicados por el visor oficial de Kapildui y permanece anclada al
 mapa al desplazarlo, ampliarlo, reproducirlo o pausarlo.
 
-Si hay varias entradas de Euskalmet puede indicarse la deseada mediante:
+El radar de Kapildui es común para todas las estaciones. Si existen varias
+entradas, la tarjeta selecciona automáticamente una de ellas. Opcionalmente
+puede fijarse una entrada concreta mediante:
 
 ```yaml
 euskalmet_entry_id: ID_DE_LA_ENTRADA
@@ -119,11 +123,16 @@ euskalmet_entry_id: ID_DE_LA_ENTRADA
 ```yaml
 type: custom:euskalmet-history-card
 entity: sensor.TU_ESTACION_temperatura
+measure: temperature
 ```
 
 La tarjeta consulta los resúmenes de Euskalmet al visualizar el periodo. Los
 datos históricos no se copian al Recorder ni se mezclan con las estadísticas
 de larga duración de Home Assistant.
+
+Cuando hay varias estaciones, la tarjeta obtiene automáticamente el código de
+estación desde la entidad indicada. Como alternativa avanzada también puede
+usarse `entry_id: ID_DE_LA_ENTRADA`, pero no es necesario en el uso normal.
 
 ### Avisos meteorológicos
 

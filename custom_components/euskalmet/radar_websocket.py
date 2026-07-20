@@ -24,17 +24,16 @@ def websocket_radar_frames(
 ) -> None:
     """Listar fotogramas o devolver un PNG codificado en Base64."""
 
-    coordinators = (
-        hass.data.get(DOMAIN, {}).get("coordinators", {})
-    )
+    coordinators = hass.data.get(DOMAIN, {}).get("coordinators", {})
     entry_id = msg.get("entry_id")
 
     if entry_id:
         coordinator = coordinators.get(entry_id)
-    elif len(coordinators) == 1:
-        coordinator = next(iter(coordinators.values()))
     else:
-        coordinator = None
+        # El radar de Kapildui es común para todas las estaciones. Cuando no
+        # se indique una entrada concreta puede utilizarse cualquier
+        # coordinador disponible, incluso si hay varias estaciones.
+        coordinator = next(iter(coordinators.values()), None)
 
     if coordinator is None:
         connection.send_error(

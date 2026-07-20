@@ -16,7 +16,7 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Estado: **beta pública**. La versión actual es `2.9.0-beta.13`.
+> Estado: **beta pública**. La versión actual es `2.9.0-beta.14`.
 
 ## Funciones
 
@@ -79,14 +79,13 @@ recursos que vayas a utilizar en **Ajustes > Paneles de control > menú de tres
 puntos > Recursos**, con tipo **Módulo JavaScript**:
 
 ```text
-/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.13
-/euskalmet_static/weather-radar-card-euskalmet.js?v=2.9.0-beta.13
+/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.14
+/euskalmet_static/weather-radar-card-euskalmet.js?v=2.9.0-beta.14
 ```
 
-No cargues al mismo tiempo otra copia de `weather-radar-card.js`, ya sea desde
-`/local/community/` o desde HACS. Ambas registrarían el mismo elemento
-`custom:weather-radar-card`. Elimina o desactiva el recurso anterior antes de
-añadir el incluido en Euskalmet.
+La adaptación registra `custom:weather-radar-card-euskalmet`, por lo que puede
+coexistir con la tarjeta original `custom:weather-radar-card` si también la
+utilizas con otras fuentes.
 
 Después de actualizar un recurso, cierra y vuelve a abrir la aplicación móvil
 o fuerza una recarga completa del navegador. El parámetro de versión evita que
@@ -159,6 +158,11 @@ demás.
 Los resúmenes mensuales se almacenan en caché y los anuales se calculan a partir
 de los meses disponibles. Las rutas individuales anteriores se conservan como
 respaldo cuando resulta necesario.
+
+Home Assistant puede conservar una precisión de visualización elegida
+anteriormente para cada entidad. Si una precipitación de `2,5 mm` aparece como
+`3 mm`, abre los ajustes de la entidad y selecciona un decimal en **Precisión de
+visualización**. La integración conserva el valor numérico original.
 
 ## Privacidad y seguridad
 

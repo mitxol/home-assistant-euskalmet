@@ -206,6 +206,7 @@ class EuskalmetSummarySensor(CoordinatorEntity, SensorEntity):
             self._attr_device_class = SensorDeviceClass.WIND_SPEED
         elif self.measure == "precipitation":
             self._attr_device_class = SensorDeviceClass.PRECIPITATION
+            self._attr_suggested_display_precision = 1
         elif self.measure == "humidity":
             self._attr_device_class = SensorDeviceClass.HUMIDITY
         elif self.measure == "pressure":

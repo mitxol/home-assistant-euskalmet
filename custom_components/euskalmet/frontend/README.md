@@ -9,13 +9,13 @@ navegador para descartar archivos antiguos de la caché.
 Recurso:
 
 ```text
-/euskalmet_static/weather-radar-card-euskalmet.js?v=2.9.0-beta.13
+/euskalmet_static/weather-radar-card-euskalmet.js?v=2.9.0-beta.14
 ```
 
 Tarjeta:
 
 ```yaml
-type: custom:weather-radar-card
+type: custom:weather-radar-card-euskalmet
 data_source: Euskalmet
 map_style: OSM
 radar_opacity: 1
@@ -33,7 +33,7 @@ geográfico de la capa de precipitación.
 Recurso:
 
 ```text
-/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.13
+/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.14
 ```
 
 Tarjeta:

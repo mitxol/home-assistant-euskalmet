@@ -28,7 +28,6 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
         hass: HomeAssistant,
         email: str,
         private_key: str,
-        login_id: str,
         region: str,
         zone: str,
         location: str,
@@ -42,7 +41,6 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
             session=session,
             email=email,
             private_key=private_key,
-            login_id=login_id,
             region=region,
             zone=zone,
             location=location,
@@ -70,9 +68,7 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
         try:
             station = await self.api.get_station()
         except EuskalmetAPIError as err:
-            raise UpdateFailed(
-                f"No se pudo obtener la estación: {err}"
-            ) from err
+            raise UpdateFailed(f"No se pudo obtener la estación: {err}") from err
 
         names = station.get("name", {})
 
@@ -128,11 +124,9 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict[str, Any]:
         """Actualizar todos los datos de Euskalmet."""
 
-        month_due = (
-            self._month_summary_updated is None
-            or datetime.now(UTC) - self._month_summary_updated
-            >= timedelta(hours=1)
-        )
+        month_due = self._month_summary_updated is None or datetime.now(
+            UTC
+        ) - self._month_summary_updated >= timedelta(hours=1)
         month_call = (
             self.api.get_aggregated_month_summary()
             if month_due
@@ -188,9 +182,7 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
             radar_result,
             self.api._empty_radar(),
         )
-        summary_day = self._optional_result(
-            "summary_day", summary_day_result, {}
-        )
+        summary_day = self._optional_result("summary_day", summary_day_result, {})
         summary_month = self._optional_result(
             "summary_month", summary_month_result, self._month_summary or {}
         )

@@ -20,5 +20,5 @@
     "PyJWT==2.12.1",
     "cryptography==48.0.1"
   ],
-  "version": "2.9.0-beta.12"
+  "version": "2.9.0-beta.13"
 }

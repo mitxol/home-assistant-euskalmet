@@ -9,7 +9,14 @@ de Euskalmet y Open Data Euskadi.
 > problemas mediante los **Issues de este repositorio**, no mediante los
 > canales de soporte de Euskalmet.
 
-> Estado: **beta pública**. La versión actual es `2.9.0-beta.12`.
+> [!NOTE]
+> El radar animado utiliza una adaptación de la tarjeta de HACS
+> [Weather Radar Card](https://github.com/jpettitt/weather-radar-card), creada
+> por su comunidad y publicada bajo licencia MIT. La adaptación añade Euskalmet
+> como fuente de datos; no convierte esta integración en un proyecto oficial de
+> Euskalmet ni de Weather Radar Card.
+
+> Estado: **beta pública**. La versión actual es `2.9.0-beta.13`.
 
 ## Funciones
 
@@ -30,8 +37,8 @@ de Euskalmet y Open Data Euskadi.
 
 1. Home Assistant `2026.7.0` o posterior durante la fase beta.
 2. HACS para la instalación recomendada.
-3. Credenciales personales de acceso a la API de Euskalmet: correo
-   electrónico, clave privada (privatekey.pem)
+3. Credenciales personales de acceso a la API de Euskalmet: correo electrónico
+   y clave privada.
 
 La integración no incorpora credenciales compartidas. El JWT se firma
 localmente mediante RS256 en la instalación de Home Assistant del usuario.
@@ -55,11 +62,8 @@ de Home Assistant y reinicia.
 
 ## Configuración
 
-El asistente solicita las credenciales, introducir email y privatekey.pem 
-(incluyendo -------BEGIN PRIVETE KEY----- Y -------END PRIVATE KEY----- en el 
-copy-paste). Después muestra las estaciones
-meteorológicas activas, con los sensores disponibles que tiene cada estación. 
-Cada estación se configura como una entrada
+El asistente solicita las credenciales y después muestra las estaciones
+meteorológicas activas. Cada estación se configura como una entrada
 independiente. La integración crea un dispositivo para las observaciones
 actuales y otro para resúmenes y estadísticas.
 
@@ -72,8 +76,8 @@ recursos que vayas a utilizar en **Ajustes > Paneles de control > menú de tres
 puntos > Recursos**, con tipo **Módulo JavaScript**:
 
 ```text
-/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.12
-/euskalmet_static/weather-radar-card-euskalmet.js?v=2.9.0-beta.12
+/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.13
+/euskalmet_static/weather-radar-card-euskalmet.js?v=2.9.0-beta.13
 ```
 
 No cargues al mismo tiempo otra copia de `weather-radar-card.js`, ya sea desde
@@ -88,13 +92,13 @@ se reutilice una copia antigua de la caché.
 ### Radar animado
 
 ```yaml
-type: custom:weather-radar-card-euskalmet
+type: custom:weather-radar-card
 data_source: Euskalmet
-map_style: Light
+map_style: OSM
 radar_opacity: 1
-past_minutes: 360
+past_minutes: 120
 show_color_bar: false
-zoom_level: 7
+autoplay: true
 ```
 
 La tarjeta obtiene los fotogramas autenticados a través de la integración. No
@@ -102,12 +106,17 @@ expone las credenciales de Euskalmet al navegador. La capa utiliza los límites
 geográficos publicados por el visor oficial de Kapildui y permanece anclada al
 mapa al desplazarlo, ampliarlo, reproducirlo o pausarlo.
 
+Si hay varias entradas de Euskalmet puede indicarse la deseada mediante:
+
+```yaml
+euskalmet_entry_id: ID_DE_LA_ENTRADA
+```
 
 ### Histórico meteorológico
 
 ```yaml
 type: custom:euskalmet-history-card
-entity: sensor.TU_ESTACION_temperatura
+entity: sensor.arkauti_temperatura
 ```
 
 La tarjeta consulta los resúmenes de Euskalmet al visualizar el periodo. Los
@@ -123,23 +132,19 @@ entidad o una tarjeta Markdown/template utilizando `sensor.nivel_de_aviso` o
 ```yaml
 type: markdown
 title: Avisos meteorológicos
-entity_id:
-  - binary_sensor.TU_ESTACION_aviso_meteorologico
-content: |-
-  {% set entity = 'binary_sensor.TU_ESTACION_aviso_meteorologico' %}
-  {% if is_state(entity, 'on') %}
-  ## ⚠️ Aviso meteorológico
+content: >-
+  {% set aviso = states('sensor.nivel_de_aviso') %}
+  {% if aviso not in ['unknown', 'unavailable', 'none', 'Sin avisos'] %}
+    **Nivel de aviso:** {{ aviso }}
 
-  **Nivel:** {{ state_attr(entity, 'severity') | default('desconocido') }}
-
-  {% for description in state_attr(entity, 'descriptions') or [] %}
-  - {{ description }}
-  {% endfor %}
+    {{ state_attr('sensor.nivel_de_aviso', 'description') | default('', true) }}
   {% else %}
-  ✅ No hay avisos meteorológicos activos.
+    No hay avisos meteorológicos activos.
   {% endif %}
 ```
 
+Sustituye el identificador por el de tu entidad si Home Assistant ha añadido
+el nombre de la estación.
 
 ## Actualización y tolerancia a fallos
 

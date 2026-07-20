@@ -9,7 +9,7 @@ navegador para descartar archivos antiguos de la caché.
 Recurso:
 
 ```text
-/euskalmet_static/weather-radar-card-euskalmet.js?v=2.9.0-beta.12
+/euskalmet_static/weather-radar-card-euskalmet.js?v=2.9.0-beta.13
 ```
 
 Tarjeta:
@@ -33,7 +33,7 @@ geográfico de la capa de precipitación.
 Recurso:
 
 ```text
-/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.12
+/euskalmet_static/euskalmet-history-card.js?v=2.9.0-beta.13
 ```
 
 Tarjeta:
@@ -50,4 +50,3 @@ Los datos se consultan bajo demanda y no se importan al Recorder.
 Los avisos pueden mostrarse mediante una tarjeta de entidad o template usando
 `sensor.nivel_de_aviso` o `binary_sensor.aviso_meteorologico`, sin necesidad de
 añadir un recurso JavaScript.
-

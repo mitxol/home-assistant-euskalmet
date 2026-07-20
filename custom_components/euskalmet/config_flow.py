@@ -63,9 +63,7 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         station = self._selected_station
         station_id = station["station_id"]
-        detected = await self._api.discover_configuration_for_station(
-            station_id
-        )
+        detected = await self._api.discover_configuration_for_station(station_id)
 
         if any(
             entry.data.get("station_id") == station_id
@@ -99,7 +97,6 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 session=async_get_clientsession(self.hass),
                 email=user_input["email"],
                 private_key=user_input["private_key"],
-                login_id=user_input.get("login_id", ""),
                 time_zone=self.hass.config.time_zone,
             )
 
@@ -127,7 +124,6 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required("email"): str,
                     vol.Required("private_key"): str,
-                    vol.Optional("login_id", default=""): str,
                 }
             ),
             errors=errors,
@@ -147,11 +143,7 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             station_id = user_input["station_id"]
             station = next(
-                (
-                    item
-                    for item in self._stations
-                    if item["station_id"] == station_id
-                ),
+                (item for item in self._stations if item["station_id"] == station_id),
                 None,
             )
 
@@ -227,11 +219,7 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
             description_placeholders={
                 "station": station["station_name"],
-                "available": self._measure_names(
-                    station["available_measures"]
-                ),
-                "missing": self._measure_names(
-                    station["missing_measures"]
-                ),
+                "available": self._measure_names(station["available_measures"]),
+                "missing": self._measure_names(station["missing_measures"]),
             },
         )

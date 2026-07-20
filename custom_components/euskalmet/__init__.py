@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import logging
@@ -77,7 +76,6 @@ async def async_setup_entry(
         hass=hass,
         email=entry.data["email"],
         private_key=entry.data["private_key"],
-        login_id=entry.data.get("login_id", ""),
         region=entry.data.get("region", "01"),
         zone=entry.data.get("zone", "01"),
         location=entry.data.get("location", "VITORIA-GASTEIZ"),
@@ -89,9 +87,7 @@ async def async_setup_entry(
 
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data[DOMAIN].setdefault("coordinators", {})[
-        entry.entry_id
-    ] = coordinator
+    hass.data[DOMAIN].setdefault("coordinators", {})[entry.entry_id] = coordinator
 
     entry.runtime_data = coordinator
 
@@ -116,7 +112,6 @@ async def async_migrate_entry(
         session=async_get_clientsession(hass),
         email=entry.data["email"],
         private_key=entry.data["private_key"],
-        login_id=entry.data.get("login_id", ""),
     )
 
     try:

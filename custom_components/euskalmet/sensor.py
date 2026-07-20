@@ -147,16 +147,12 @@ async def async_setup_entry(
     supported = coordinator.api.supported_measurements
 
     if not supported and isinstance(configured_measures, list):
-        supported = {
-            key for key in configured_measures if key in MEASURES
-        }
+        supported = {key for key in configured_measures if key in MEASURES}
     if not supported:
         supported = set(MEASURES)
 
     entities = [
-        EuskalmetSensor(coordinator, key)
-        for key in MEASURES
-        if key in supported
+        EuskalmetSensor(coordinator, key) for key in MEASURES if key in supported
     ]
 
     # Eliminar del registro sensores que versiones anteriores crearon para
@@ -171,9 +167,7 @@ async def async_setup_entry(
         if entity_id is not None:
             registry.async_remove(entity_id)
 
-    entities.append(
-        EuskalmetAlertLevelSensor(coordinator)
-    )
+    entities.append(EuskalmetAlertLevelSensor(coordinator))
     entities.extend(
         EuskalmetSummarySensor(coordinator, config)
         for config in SUMMARY_SENSORS
@@ -245,17 +239,14 @@ class EuskalmetSummarySensor(CoordinatorEntity, SensorEntity):
     def _annual_summary(self) -> dict[str, Any]:
         """Combinar resúmenes mensuales conservando pesos y extremos."""
 
-        documents = (self.coordinator.data or {}).get(
-            "summary_year_months", {}
-        )
+        documents = (self.coordinator.data or {}).get("summary_year_months", {})
         summaries: list[tuple[int, dict[str, Any]]] = []
         for month, document in documents.items():
             items = document.get("items", []) if isinstance(document, dict) else []
             for item in items:
                 if (
                     isinstance(item, dict)
-                    and item.get("measureType")
-                    == SUMMARY_MEASURE_TYPES[self.measure]
+                    and item.get("measureType") == SUMMARY_MEASURE_TYPES[self.measure]
                     and item.get("measureId") == self.measure
                     and isinstance(item.get("summary"), dict)
                 ):
@@ -264,7 +255,13 @@ class EuskalmetSummarySensor(CoordinatorEntity, SensorEntity):
         if not summaries:
             return {}
         if self.field == "total":
-            return {"total": sum(float(s.get("total", 0)) for _, s in summaries)}
+            totals = [
+                summary["total"]
+                for _, summary in summaries
+                if isinstance(summary.get("total"), (int, float))
+                and not isinstance(summary.get("total"), bool)
+            ]
+            return {"total": sum(totals)}
         if self.field == "mean":
             weighted = [
                 (float(s["mean"]), int(s.get("processedReadings", 0)))
@@ -276,7 +273,8 @@ class EuskalmetSummarySensor(CoordinatorEntity, SensorEntity):
             return {
                 "mean": (
                     sum(value * weight for value, weight in weighted) / count
-                    if count else None
+                    if count
+                    else None
                 )
             }
         extremes = [
@@ -303,6 +301,8 @@ class EuskalmetSummarySensor(CoordinatorEntity, SensorEntity):
             return None
         if self.measure in {"mean_speed", "max_speed"}:
             return round(float(value) * 3.6, 1)
+        if self.measure == "precipitation":
+            return value
         return round(float(value), 2)
 
     @property
@@ -341,9 +341,7 @@ class EuskalmetSensor(
         self.cfg = MEASURES[key]
 
         self._attr_name = self.cfg["name"]
-        self._attr_unique_id = (
-            f"{coordinator.api.station_id}_{key}"
-        )
+        self._attr_unique_id = f"{coordinator.api.station_id}_{key}"
 
         self._attr_icon = self.cfg["icon"]
 
@@ -438,9 +436,7 @@ class EuskalmetAlertLevelSensor(
     def __init__(self, coordinator: EuskalmetCoordinator) -> None:
         super().__init__(coordinator)
 
-        self._attr_unique_id = (
-            f"{coordinator.api.station_id}_alert_level"
-        )
+        self._attr_unique_id = f"{coordinator.api.station_id}_alert_level"
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -454,11 +450,7 @@ class EuskalmetAlertLevelSensor(
         if self.coordinator.data is None:
             return "none"
 
-        severity = (
-            self.coordinator.data
-            .get("alerts", {})
-            .get("severity", "NONE")
-        )
+        severity = self.coordinator.data.get("alerts", {}).get("severity", "NONE")
 
         return str(severity).lower()
 
@@ -503,11 +495,7 @@ class EuskalmetAlertLevelSensor(
                 "causes",
                 [],
             ),
-            "description": (
-                descriptions[0]
-                if descriptions
-                else None
-            ),
+            "description": (descriptions[0] if descriptions else None),
             "descriptions": descriptions,
             "alerts": alerts.get(
                 "alerts",

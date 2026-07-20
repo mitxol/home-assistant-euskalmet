@@ -7,8 +7,7 @@
         "description": "Introduce los datos de acceso. En el siguiente paso podrás elegir una estación meteorológica y ver qué magnitudes ofrece.",
         "data": {
           "email": "Correo electrónico",
-          "private_key": "Clave privada",
-          "login_id": "Login ID (opcional)"
+          "private_key": "Clave privada"
         }
       },
       "station": {

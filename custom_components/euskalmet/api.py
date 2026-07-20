@@ -82,9 +82,7 @@ def _slot_start(
 
         # Aunque la API denomina este campo ``LocalTime``, las lecturas
         # de estaciones y la hora del endpoint avanzan en UTC.
-        observed_datetime = request_hour.astimezone(
-            UTC
-        ).replace(
+        observed_datetime = request_hour.astimezone(UTC).replace(
             hour=hour,
             minute=minute,
             second=second,
@@ -122,10 +120,7 @@ def _add_freshness(
         **result,
         "observed_at": observed_utc.isoformat(),
         "age_seconds": max(0, int(age.total_seconds())),
-        "stale": (
-            age > MAX_MEASUREMENT_AGE
-            or age < -FUTURE_TOLERANCE
-        ),
+        "stale": (age > MAX_MEASUREMENT_AGE or age < -FUTURE_TOLERANCE),
         "from_cache": from_cache,
     }
 
@@ -138,7 +133,6 @@ class EuskalmetAPI:
         session: aiohttp.ClientSession,
         email: str,
         private_key: str,
-        login_id: str = "",
         region: str = "01",
         zone: str = "01",
         location: str = "VITORIA-GASTEIZ",
@@ -151,7 +145,6 @@ class EuskalmetAPI:
 
         self.email = email
         self.private_key = private_key
-        self.login_id = login_id
 
         self.region = region
         self.zone = zone
@@ -169,9 +162,7 @@ class EuskalmetAPI:
         self.supported_measurements: set[str] | None = None
 
         self._last_values: dict[str, dict[str, Any]] = {}
-        self._request_semaphore = asyncio.Semaphore(
-            MAX_CONCURRENT_REQUESTS
-        )
+        self._request_semaphore = asyncio.Semaphore(MAX_CONCURRENT_REQUESTS)
         self._token_lock = asyncio.Lock()
         self._token: str | None = None
         self._token_expires_at = 0
@@ -190,10 +181,7 @@ class EuskalmetAPI:
             "version": "1.0.0",
         }
 
-        if self.login_id:
-            payload["sub"] = self.login_id
-        else:
-            payload["email"] = self.email
+        payload["email"] = self.email
 
         token = jwt.encode(
             payload,
@@ -270,9 +258,7 @@ class EuskalmetAPI:
 
                         if response.status != 200:
                             body = (await response.text())[:500]
-                            raise EuskalmetAPIError(
-                                f"HTTP {response.status}: {body}"
-                            )
+                            raise EuskalmetAPIError(f"HTTP {response.status}: {body}")
 
                         return await response.json(
                             content_type=None,
@@ -295,9 +281,7 @@ class EuskalmetAPI:
                 async with asyncio.timeout(REQUEST_TIMEOUT):
                     async with self.session.get(
                         url,
-                        headers={
-                            "Accept": "application/geo+json, application/json"
-                        },
+                        headers={"Accept": "application/geo+json, application/json"},
                     ) as response:
                         if response.status != 200:
                             raise EuskalmetAPIError(
@@ -360,14 +344,10 @@ class EuskalmetAPI:
                         "value": reading["value"],
                         "slot": {
                             "time": observed_at.strftime("%H:%M"),
-                            "sensor_position_cm": reading[
-                                "sensor_position_cm"
-                            ],
+                            "sensor_position_cm": reading["sensor_position_cm"],
                         },
                         "measure_id": reading["measure_id"],
-                        "sensor_position_cm": reading[
-                            "sensor_position_cm"
-                        ],
+                        "sensor_position_cm": reading["sensor_position_cm"],
                         "source": "euskalmet_public_station_readings",
                     },
                     observed_at,
@@ -411,10 +391,7 @@ class EuskalmetAPI:
             parsed = parse_aggregated_readings(document, MEASURES, now)
             for key, reading in parsed.items():
                 previous = latest_readings.get(key)
-                if (
-                    previous is None
-                    or reading["observed_at"] > previous["observed_at"]
-                ):
+                if previous is None or reading["observed_at"] > previous["observed_at"]:
                     latest_readings[key] = reading
 
             # En condiciones normales hoy contiene ya todas las magnitudes.
@@ -551,9 +528,7 @@ class EuskalmetAPI:
             *(with_capabilities(station) for station in stations)
         )
         return [
-            station
-            for station in stations_with_capabilities
-            if station is not None
+            station for station in stations_with_capabilities if station is not None
         ]
 
     @staticmethod
@@ -586,9 +561,7 @@ class EuskalmetAPI:
 
         region_path = quote(region, safe="")
         return self._catalog_items(
-            await self._request(
-                f"{API_BASE}/geo/regions/{region_path}/zones"
-            ),
+            await self._request(f"{API_BASE}/geo/regions/{region_path}/zones"),
             "zones",
         )
 
@@ -603,8 +576,7 @@ class EuskalmetAPI:
         zone_path = quote(zone, safe="")
         return self._catalog_items(
             await self._request(
-                f"{API_BASE}/geo/regions/{region_path}/"
-                f"zones/{zone_path}/locations"
+                f"{API_BASE}/geo/regions/{region_path}/zones/{zone_path}/locations"
             ),
             "locations",
         )
@@ -759,9 +731,7 @@ class EuskalmetAPI:
                 observed_at = _slot_start(slot, date)
 
                 if observed_at is not None:
-                    candidates.append(
-                        (observed_at, value, slot)
-                    )
+                    candidates.append((observed_at, value, slot))
 
             if candidates:
                 observed_at, value, slot = max(
@@ -828,26 +798,19 @@ class EuskalmetAPI:
             )
 
         keys = tuple(MEASURES)
-        values = await asyncio.gather(
-            *(self.get_measure(key) for key in keys)
-        )
+        values = await asyncio.gather(*(self.get_measure(key) for key in keys))
 
         return dict(zip(keys, values, strict=True))
 
     async def get_station(self) -> dict[str, Any]:
         """Obtener información de la estación."""
 
-        url = (
-            f"{API_BASE}/stations/"
-            f"{self.station_id}/current"
-        )
+        url = f"{API_BASE}/stations/{self.station_id}/current"
 
         data = await self._request(url)
 
         if not isinstance(data, dict):
-            raise EuskalmetAPIError(
-                "La respuesta de la estación no es un objeto JSON"
-            )
+            raise EuskalmetAPIError("La respuesta de la estación no es un objeto JSON")
 
         return data
 
@@ -860,9 +823,7 @@ class EuskalmetAPI:
         )
         return await self._request(url)
 
-    async def get_aggregated_day_summary(
-        self, date: datetime | None = None
-    ) -> Any:
+    async def get_aggregated_day_summary(self, date: datetime | None = None) -> Any:
         """Obtener el resumen agregado de un día."""
 
         date = date or datetime.now(self.time_zone)
@@ -871,9 +832,7 @@ class EuskalmetAPI:
             f"forStation/{self.station_id}/at/{date:%Y/%m/%d}"
         )
 
-    async def get_aggregated_month_summary(
-        self, date: datetime | None = None
-    ) -> Any:
+    async def get_aggregated_month_summary(self, date: datetime | None = None) -> Any:
         """Obtener el resumen agregado de un mes."""
 
         date = date or datetime.now(self.time_zone)
@@ -903,9 +862,7 @@ class EuskalmetAPI:
         data = await self._request(url)
 
         if not isinstance(data, dict):
-            raise EuskalmetAPIError(
-                "La previsión diaria no es un objeto JSON"
-            )
+            raise EuskalmetAPIError("La previsión diaria no es un objeto JSON")
 
         trends = data.get("trendsByDate") or {}
 
@@ -948,9 +905,7 @@ class EuskalmetAPI:
         data = await self._request(url)
 
         if not isinstance(data, dict):
-            raise EuskalmetAPIError(
-                "La previsión horaria no es un objeto JSON"
-            )
+            raise EuskalmetAPIError("La previsión horaria no es un objeto JSON")
 
         return data
 
@@ -976,7 +931,7 @@ class EuskalmetAPI:
             api_root = API_BASE.rstrip("/")
 
             if api_root.endswith("/euskalmet"):
-                api_root = api_root[:-len("/euskalmet")]
+                api_root = api_root[: -len("/euskalmet")]
 
             return f"{api_root}/{key}"
 
@@ -1005,9 +960,7 @@ class EuskalmetAPI:
         today = datetime.now().astimezone()
 
         index_url = (
-            f"{API_BASE}/alerts/"
-            f"zones/{self.alert_zone}/"
-            f"forecast/at/{today:%Y/%m/%d}"
+            f"{API_BASE}/alerts/zones/{self.alert_zone}/forecast/at/{today:%Y/%m/%d}"
         )
 
         index = await self._request(index_url)
@@ -1034,20 +987,12 @@ class EuskalmetAPI:
             if isinstance(entry, dict) and entry.get("key")
         ]
         responses = await asyncio.gather(
-            *(
-                self._request(self._alert_url_from_key(key))
-                for key in keys
-            ),
+            *(self._request(self._alert_url_from_key(key)) for key in keys),
             return_exceptions=True,
         )
 
-        if keys and all(
-            isinstance(response, Exception)
-            for response in responses
-        ):
-            raise EuskalmetAPIError(
-                "No se pudo descargar ningún aviso meteorológico"
-            )
+        if keys and all(isinstance(response, Exception) for response in responses):
+            raise EuskalmetAPIError("No se pudo descargar ningún aviso meteorológico")
 
         for key, alert in zip(keys, responses, strict=True):
             if isinstance(alert, asyncio.CancelledError):
@@ -1064,9 +1009,7 @@ class EuskalmetAPI:
             if not isinstance(alert, dict):
                 continue
 
-            severity = str(
-                alert.get("severity", "NONE")
-            ).upper()
+            severity = str(alert.get("severity", "NONE")).upper()
 
             if severity_order.get(
                 severity,
@@ -1101,14 +1044,12 @@ class EuskalmetAPI:
                 if cause and cause not in causes:
                     causes.append(cause)
 
-                if (
-                    description
-                    and description not in descriptions
-                ):
+                if description and description not in descriptions:
                     descriptions.append(description)
 
         return {
-            "active": highest in {
+            "active": highest
+            in {
                 "YELLOW",
                 "ORANGE",
                 "RED",
@@ -1149,11 +1090,7 @@ class EuskalmetAPI:
             return -1
 
         try:
-            start = (
-                str(range_value)
-                .split("[", 1)[1]
-                .split("..", 1)[0]
-            )
+            start = str(range_value).split("[", 1)[1].split("..", 1)[0]
 
             parts = start.split(":")
 
@@ -1161,11 +1098,7 @@ class EuskalmetAPI:
             minutes = int(parts[1])
             seconds = int(parts[2])
 
-            return (
-                hours * 3600
-                + minutes * 60
-                + seconds
-            )
+            return hours * 3600 + minutes * 60 + seconds
 
         except (
             IndexError,
@@ -1242,10 +1175,7 @@ class EuskalmetAPI:
             valid_frames = [
                 frame
                 for frame in frames
-                if (
-                    isinstance(frame, dict)
-                    and frame.get("activityMapContent")
-                )
+                if (isinstance(frame, dict) and frame.get("activityMapContent"))
             ]
 
             if not valid_frames:
@@ -1254,9 +1184,7 @@ class EuskalmetAPI:
             # La API no garantiza que las capturas estén ordenadas.
             ordered_frames = sorted(
                 valid_frames,
-                key=lambda frame: self._radar_range_start(
-                    frame.get("range")
-                ),
+                key=lambda frame: self._radar_range_start(frame.get("range")),
             )
             latest_frame = ordered_frames[-1]
 
@@ -1272,9 +1200,7 @@ class EuskalmetAPI:
                 for frame in ordered_frames
             ]
 
-            encoded_image = latest_frame.get(
-                "activityMapContent"
-            )
+            encoded_image = latest_frame.get("activityMapContent")
 
             try:
                 image = await asyncio.to_thread(

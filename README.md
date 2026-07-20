@@ -31,7 +31,7 @@ de Euskalmet y Open Data Euskadi.
 1. Home Assistant `2026.7.0` o posterior durante la fase beta.
 2. HACS para la instalación recomendada.
 3. Credenciales personales de acceso a la API de Euskalmet: correo
-   electrónico, clave privada y `login_id` cuando corresponda.
+   electrónico, clave privada (privatekey.pem)
 
 La integración no incorpora credenciales compartidas. El JWT se firma
 localmente mediante RS256 en la instalación de Home Assistant del usuario.
@@ -55,8 +55,11 @@ de Home Assistant y reinicia.
 
 ## Configuración
 
-El asistente solicita las credenciales y después muestra las estaciones
-meteorológicas activas. Cada estación se configura como una entrada
+El asistente solicita las credenciales, introducir email y privatekey.pem 
+(incluyendo -------BEGIN PRIVETE KEY----- Y -------END PRIVATE KEY----- en el 
+copy-paste). Después muestra las estaciones
+meteorológicas activas, con los sensores disponibles que tiene cada estación. 
+Cada estación se configura como una entrada
 independiente. La integración crea un dispositivo para las observaciones
 actuales y otro para resúmenes y estadísticas.
 
@@ -99,17 +102,12 @@ expone las credenciales de Euskalmet al navegador. La capa utiliza los límites
 geográficos publicados por el visor oficial de Kapildui y permanece anclada al
 mapa al desplazarlo, ampliarlo, reproducirlo o pausarlo.
 
-Si hay varias entradas de Euskalmet puede indicarse la deseada mediante:
-
-```yaml
-euskalmet_entry_id: ID_DE_LA_ENTRADA
-```
 
 ### Histórico meteorológico
 
 ```yaml
 type: custom:euskalmet-history-card
-entity: sensor.arkauti_temperatura
+entity: sensor.TU_ESTACION_temperatura
 ```
 
 La tarjeta consulta los resúmenes de Euskalmet al visualizar el periodo. Los

@@ -62,15 +62,15 @@ de Home Assistant y reinicia.
 
 ## Configuración
 
-El asistente solicita las credenciales. Hay que introducir email y privatekey.pem
+El asistente solicita las credenciales de la clave API. 
+Hay que introducir email y privatekey.pem
 (incluyendo ------BEGIN PRIVATE KEY---- y ------END PRIVATE KEY----)
-después muestra las estaciones meteorológicas activas  con los sensores que 
+Después muestra las estaciones meteorológicas activas  con los sensores que 
 tiene disponibles (no todas las estaciones tienen todos los sensores). 
 Cada estación se configura como una entrada independiente. 
 La integración crea un dispositivo para las observaciones
 actuales y otro para resúmenes y estadísticas.
 
-Solo se crean entidades para las magnitudes publicadas por la estación.
 
 ## Tarjetas
 
@@ -141,20 +141,9 @@ measure: temperature
 title: Histórico de Arkaute
 ```
 
-La ID puede obtenerse descargando los diagnósticos de la entrada desde
-**Ajustes > Dispositivos y servicios > Euskalmet**. Aparece al final del nombre
-del archivo:
+La ID puede obtenerse copiando la entrada desde:
+**Ajustes > Dispositivos y servicios > Euskalmet**. Copiar ID de la entrada:
 
-```text
-config_entry-euskalmet-ID_DE_LA_ENTRADA.json
-```
-
-También pueden listarse todas las entradas desde el terminal de Home Assistant,
-sin modificar la configuración:
-
-```bash
-jq -r '.data.entries[] | select(.domain=="euskalmet") | "\(.title) | \(.data.station_id) | \(.entry_id)"' /config/.storage/core.config_entries
-```
 
 ### Avisos meteorológicos
 

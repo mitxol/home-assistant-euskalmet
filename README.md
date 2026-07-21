@@ -16,7 +16,7 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Estado: **beta pública**. La versión actual es `2.9.0-beta.15`.
+> Estado: **estable**. La versión actual es `2.9.0`.
 
 ## Funciones
 
@@ -35,7 +35,7 @@ de Euskalmet y Open Data Euskadi.
 
 ## Requisitos
 
-1. Home Assistant `2026.7.0` o posterior durante la fase beta.
+1. Home Assistant `2026.7.0` o posterior.
 2. HACS para la instalación recomendada.
 3. Credenciales personales de acceso a la API de Euskalmet: correo electrónico
    y clave privada (privatekey.pem).
@@ -51,7 +51,7 @@ Hasta que la integración entre en el catálogo predeterminado:
 2. Abre el menú de tres puntos y selecciona **Repositorios personalizados**.
 3. Añade `https://github.com/mitxol/home-assistant-euskalmet` como
    **Integration**.
-4. Activa **Mostrar versiones beta**, instala Euskalmet y reinicia Home Assistant.
+4. Instala Euskalmet y reinicia Home Assistant.
 5. Ve a **Ajustes > Dispositivos y servicios > Añadir integración** y busca
    **Euskalmet**.
 
@@ -130,9 +130,31 @@ La tarjeta consulta los resúmenes de Euskalmet al visualizar el periodo. Los
 datos históricos no se copian al Recorder ni se mezclan con las estadísticas
 de larga duración de Home Assistant.
 
-Cuando hay varias estaciones, la tarjeta obtiene automáticamente el código de
-estación desde la entidad indicada. Como alternativa avanzada también puede
-usarse `entry_id: ID_DE_LA_ENTRADA`, pero no es necesario en el uso normal.
+Con una sola entrada no hace falta indicar nada más. Cuando hay varias
+estaciones, se recomienda seleccionar explícitamente la entrada para obtener un
+comportamiento idéntico en navegadores y en la aplicación móvil:
+
+```yaml
+type: custom:euskalmet-history-card
+entry_id: ID_DE_LA_ENTRADA
+measure: temperature
+title: Histórico de Arkaute
+```
+
+La ID puede obtenerse descargando los diagnósticos de la entrada desde
+**Ajustes > Dispositivos y servicios > Euskalmet**. Aparece al final del nombre
+del archivo:
+
+```text
+config_entry-euskalmet-ID_DE_LA_ENTRADA.json
+```
+
+También pueden listarse todas las entradas desde el terminal de Home Assistant,
+sin modificar la configuración:
+
+```bash
+jq -r '.data.entries[] | select(.domain=="euskalmet") | "\(.title) | \(.data.station_id) | \(.entry_id)"' /config/.storage/core.config_entries
+```
 
 ### Avisos meteorológicos
 

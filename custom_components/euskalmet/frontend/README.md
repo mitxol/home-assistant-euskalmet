@@ -45,12 +45,18 @@ entity: sensor.arkauti_temperatura
 measure: temperature
 ```
 
-Los datos se consultan bajo demanda y no se importan al Recorder. La tarjeta
-deduce la estación desde la entidad, también cuando hay varias entradas.
+Los datos se consultan bajo demanda y no se importan al Recorder. Cuando hay
+varias entradas se recomienda indicar explícitamente la correspondiente:
+
+```yaml
+type: custom:euskalmet-history-card
+entry_id: ID_DE_LA_ENTRADA
+measure: temperature
+title: Histórico de Arkaute
+```
 
 ## Avisos meteorológicos
 
 Los avisos pueden mostrarse mediante una tarjeta de entidad o template usando
 `sensor.nivel_de_aviso` o `binary_sensor.aviso_meteorologico`, sin necesidad de
 añadir un recurso JavaScript.
-

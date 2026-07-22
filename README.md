@@ -16,7 +16,11 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Estado: **estable**. La versión actual es `2.9.0`.
+> Estado: **candidata final de mantenimiento**. La versión actual es
+> `2.9.1-beta.7`.
+> Corrige la previsión horaria al final del día, la detección de magnitudes ante
+> fallos del dominio público y los resúmenes diarios durante el cambio de fecha
+> entre UTC y la zona horaria de Home Assistant.
 
 ## Funciones
 
@@ -32,6 +36,17 @@ de Euskalmet y Open Data Euskadi.
 - Histórico consultado bajo demanda, sin importar datos antiguos a Recorder.
 - Caché y endpoints agregados para reducir el número de peticiones a la API.
 - Conservación del último valor válido ante respuestas temporales incompletas.
+
+## Vista previa
+
+![Panel de Euskalmet con radar, históricos, avisos y observaciones](docs/images/panel-euskalmet.png)
+
+La entidad meteorológica ofrece previsión diaria y horaria desde el diálogo
+nativo de Home Assistant:
+
+| Previsión diaria | Previsión horaria |
+| --- | --- |
+| ![Previsión diaria de Euskalmet](docs/images/prevision-diaria.png) | ![Previsión horaria de Euskalmet](docs/images/prevision-horaria.png) |
 
 ## Requisitos
 
@@ -62,15 +77,15 @@ de Home Assistant y reinicia.
 
 ## Configuración
 
-El asistente solicita las credenciales de la clave API. 
-Hay que introducir email y privatekey.pem
+El asistente solicita las credenciales. Hay que introducir email y privatekey.pem
 (incluyendo ------BEGIN PRIVATE KEY---- y ------END PRIVATE KEY----)
-Después muestra las estaciones meteorológicas activas  con los sensores que 
+después muestra las estaciones meteorológicas activas  con los sensores que 
 tiene disponibles (no todas las estaciones tienen todos los sensores). 
 Cada estación se configura como una entrada independiente. 
 La integración crea un dispositivo para las observaciones
 actuales y otro para resúmenes y estadísticas.
 
+Solo se crean entidades para las magnitudes publicadas por la estación.
 
 ## Tarjetas
 
@@ -141,9 +156,8 @@ measure: temperature
 title: Histórico de Arkaute
 ```
 
-La ID puede obtenerse copiando la entrada desde:
-**Ajustes > Dispositivos y servicios > Euskalmet**. Copiar ID de la entrada:
-
+La ID puede obtenerse desde **Ajustes > Dispositivos y servicios > Euskalmet >
+Copiar ID de la entrada**.
 
 ### Avisos meteorológicos
 
@@ -205,9 +219,18 @@ Antes de abrir una incidencia:
 
 ## Fuente de datos, marca y atribuciones
 
-Los datos proceden de **Euskalmet — Agencia Vasca de Meteorología** a través de
-**Open Data Euskadi**. Este repositorio no utiliza el logotipo oficial de
-Euskalmet ni símbolos institucionales como identidad visual.
+<p align="center">
+  <img src="docs/images/euskalmet-logo.jpg" alt="Euskalmet — Agencia Vasca de Meteorología" width="360">
+</p>
+
+**Datos meteorológicos proporcionados por Euskalmet — Agencia Vasca de
+Meteorología**, a través de Euskalmet y Open Data Euskadi.
+
+El logotipo oficial se reproduce únicamente para atribuir la procedencia de los
+datos, con la autorización indicada por Euskalmet. No forma parte de la
+identidad visual de esta integración y no implica afiliación, patrocinio,
+mantenimiento ni soporte oficial. El icono comunitario de la integración es un
+diseño independiente.
 
 La tarjeta de radar se basa en el proyecto comunitario
 [Weather Radar Card](https://github.com/jpettitt/weather-radar-card) y conserva

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from homeassistant.components.weather import (
@@ -14,7 +14,7 @@ from homeassistant.const import (
     UnitOfSpeed,
     UnitOfTemperature,
 )
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -88,6 +88,13 @@ class EuskalmetWeather(
         self._attr_unique_id = (
             f"{coordinator.api.station_id}_weather"
         )
+
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        """Actualizar el estado y publicar las previsiones renovadas."""
+
+        super()._handle_coordinator_update()
+        self.hass.async_create_task(self.async_update_listeners(None))
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -185,7 +192,7 @@ class EuskalmetWeather(
             return None
 
     def _hourly_base_datetime(self) -> datetime:
-        """Obtener la fecha local de validez del pronóstico."""
+        """Obtener la fecha UTC de validez del pronóstico."""
 
         raw_datetime = self._hourly_data().get("for")
 
@@ -193,15 +200,15 @@ class EuskalmetWeather(
             parsed = dt_util.parse_datetime(raw_datetime)
 
             if parsed is not None:
-                return dt_util.as_local(parsed)
+                return dt_util.as_utc(parsed)
 
-        return dt_util.now()
+        return datetime.now(UTC)
 
     def _build_hour_datetime(
         self,
         item: dict,
     ) -> datetime | None:
-        """Construir un datetime local para un bloque horario."""
+        """Construir el datetime UTC de un bloque horario."""
 
         hour = self._extract_hour(item)
 
@@ -209,6 +216,18 @@ class EuskalmetWeather(
             return None
 
         base = self._hourly_base_datetime()
+        forecast_date = item.get("_forecast_date")
+        if isinstance(forecast_date, str):
+            try:
+                parsed_date = datetime.fromisoformat(forecast_date)
+            except ValueError:
+                pass
+            else:
+                base = base.replace(
+                    year=parsed_date.year,
+                    month=parsed_date.month,
+                    day=parsed_date.day,
+                )
 
         try:
             return base.replace(

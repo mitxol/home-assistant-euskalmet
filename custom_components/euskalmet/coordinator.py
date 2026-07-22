@@ -14,7 +14,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
-from .api import EuskalmetAPI, EuskalmetAPIError
+from .api import EuskalmetAPI, EuskalmetAPIError, EuskalmetNotFoundError
 from .const import UPDATE_INTERVAL
 
 _LOGGER = logging.getLogger(__name__)
@@ -97,6 +97,12 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
 
         if isinstance(result, asyncio.CancelledError):
             raise result
+
+        # The daily summary can be absent briefly just after midnight. Do not
+        # report an expected 404 or retain yesterday's accumulated values.
+        if endpoint == "summary_day" and isinstance(result, EuskalmetNotFoundError):
+            self._failed_endpoints.discard(endpoint)
+            return default
 
         if isinstance(result, Exception):
             if endpoint not in self._failed_endpoints:

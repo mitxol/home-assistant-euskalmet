@@ -308,3 +308,226 @@ def parse_aggregated_readings(
         }
         for key, candidate in latest.items()
     }
+
+
+def summarize_aggregated_day(document: object, now: datetime) -> dict[str, Any]:
+    """Build a provisional daily summary from published aggregated slots."""
+
+    if not isinstance(document, dict) or not isinstance(document.get("items"), list):
+        return {"items": []}
+
+    now_utc = now.astimezone(UTC)
+    summary_items: list[dict[str, Any]] = []
+    for item in document["items"]:
+        if not isinstance(item, dict):
+            continue
+        samples: list[tuple[datetime, float | int]] = []
+        readings = item.get("readings")
+        if not isinstance(readings, list):
+            continue
+        for reading in readings:
+            if not isinstance(reading, dict):
+                continue
+            slots = reading.get("slots")
+            values = reading.get("values")
+            if not isinstance(slots, list) or not isinstance(values, list):
+                continue
+            for index, raw_value in enumerate(values):
+                if index >= len(slots):
+                    continue
+                times = _aggregated_slot_times(reading, slots[index])
+                value = _numeric_value(raw_value)
+                if times is None or value is None:
+                    continue
+                observed_at, interval_end = times
+                if (
+                    interval_end + _AGGREGATED_PUBLICATION_DELAY <= now_utc
+                    and observed_at.astimezone(now.tzinfo).date() == now.date()
+                ):
+                    samples.append((observed_at, value))
+
+        if not samples:
+            continue
+        minimum_at, minimum = min(samples, key=lambda sample: sample[1])
+        maximum_at, maximum = max(samples, key=lambda sample: sample[1])
+        values = [value for _, value in samples]
+        summary_items.append(
+            {
+                "measureType": item.get("measureType"),
+                "measureId": item.get("measureId"),
+                "summary": {
+                    "min": {
+                        "value": minimum,
+                        "atHour": f"{minimum_at.hour:02d}",
+                        "atMinute": f"{minimum_at.minute:02d}",
+                    },
+                    "max": {
+                        "value": maximum,
+                        "atHour": f"{maximum_at.hour:02d}",
+                        "atMinute": f"{maximum_at.minute:02d}",
+                    },
+                    "total": sum(values),
+                    "mean": sum(values) / len(values),
+                    "processedReadings": len(values),
+                },
+            }
+        )
+
+    return {"items": summary_items, "provisional": True}
+
+
+def summarize_public_day(
+    document: object,
+    measures: Mapping[str, Mapping[str, Any]],
+    document_date: datetime,
+    local_now: datetime,
+) -> dict[str, Any]:
+    """Build a provisional summary from the public daily readings document."""
+
+    if not isinstance(document, dict):
+        return {"items": [], "provisional": True, "public_fallback": True}
+
+    summary_items: list[dict[str, Any]] = []
+    for config in measures.values():
+        measure_type = str(config.get("measure_type", ""))
+        measure_id = str(config.get("measure", ""))
+        matching = [
+            item
+            for item in document.values()
+            if isinstance(item, dict)
+            and str(item.get("type", "")) == measure_type
+            and str(item.get("name", "")) == measure_id
+        ]
+        for item in matching[:1]:
+            positions = item.get("data")
+            if not isinstance(positions, dict):
+                continue
+            timelines = [
+                value for value in positions.values() if isinstance(value, dict)
+            ]
+            if not timelines:
+                continue
+            timeline = max(timelines, key=len)
+            samples: list[tuple[datetime, float | int]] = []
+            for raw_time, raw_value in timeline.items():
+                value = _numeric_value(raw_value)
+                if value is None:
+                    continue
+                try:
+                    parts = str(raw_time).split(":")
+                    observed_at = document_date.replace(
+                        hour=int(parts[0]),
+                        minute=int(parts[1]),
+                        second=0,
+                        microsecond=0,
+                    )
+                except (IndexError, TypeError, ValueError):
+                    continue
+                if observed_at.astimezone(local_now.tzinfo).date() == local_now.date():
+                    samples.append((observed_at, value))
+
+            if not samples:
+                continue
+            minimum_at, minimum = min(samples, key=lambda sample: sample[1])
+            maximum_at, maximum = max(samples, key=lambda sample: sample[1])
+            values = [value for _, value in samples]
+            summary_items.append(
+                {
+                    "measureType": measure_type,
+                    "measureId": measure_id,
+                    "summary": {
+                        "min": {
+                            "value": minimum,
+                            "atHour": f"{minimum_at.hour:02d}",
+                            "atMinute": f"{minimum_at.minute:02d}",
+                        },
+                        "max": {
+                            "value": maximum,
+                            "atHour": f"{maximum_at.hour:02d}",
+                            "atMinute": f"{maximum_at.minute:02d}",
+                        },
+                        "total": sum(values),
+                        "mean": sum(values) / len(values),
+                        "processedReadings": len(values),
+                    },
+                }
+            )
+
+    return {
+        "items": summary_items,
+        "provisional": True,
+        "public_fallback": True,
+    }
+
+
+def combine_provisional_summaries(
+    documents: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Combine partial summaries belonging to one local calendar day."""
+
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = {}
+    for document in documents:
+        items = document.get("items")
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if not isinstance(item, dict) or not isinstance(item.get("summary"), dict):
+                continue
+            key = (str(item.get("measureType", "")), str(item.get("measureId", "")))
+            grouped.setdefault(key, []).append(item["summary"])
+
+    combined_items: list[dict[str, Any]] = []
+    for (measure_type, measure_id), summaries in grouped.items():
+        count = sum(int(summary.get("processedReadings", 0)) for summary in summaries)
+        totals = [
+            summary["total"]
+            for summary in summaries
+            if isinstance(summary.get("total"), (int, float))
+        ]
+        weighted_means = [
+            (float(summary["mean"]), int(summary.get("processedReadings", 0)))
+            for summary in summaries
+            if isinstance(summary.get("mean"), (int, float))
+            and int(summary.get("processedReadings", 0)) > 0
+        ]
+        minima = [
+            summary["min"]
+            for summary in summaries
+            if isinstance(summary.get("min"), dict)
+            and isinstance(summary["min"].get("value"), (int, float))
+        ]
+        maxima = [
+            summary["max"]
+            for summary in summaries
+            if isinstance(summary.get("max"), dict)
+            and isinstance(summary["max"].get("value"), (int, float))
+        ]
+        combined_items.append(
+            {
+                "measureType": measure_type,
+                "measureId": measure_id,
+                "summary": {
+                    "min": min(minima, key=lambda value: value["value"])
+                    if minima
+                    else None,
+                    "max": max(maxima, key=lambda value: value["value"])
+                    if maxima
+                    else None,
+                    "total": sum(totals),
+                    "mean": (
+                        sum(value * weight for value, weight in weighted_means) / count
+                        if count
+                        else None
+                    ),
+                    "processedReadings": count,
+                },
+            }
+        )
+
+    return {
+        "items": combined_items,
+        "provisional": True,
+        "public_fallback": any(
+            document.get("public_fallback") is True for document in documents
+        ),
+    }

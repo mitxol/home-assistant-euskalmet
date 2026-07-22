@@ -310,11 +310,22 @@ class EuskalmetSummarySensor(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         summary = self._summary()
         extreme = summary.get(self.field)
+        document = (self.coordinator.data or {}).get(self.section, {})
+        provisional = isinstance(document, dict) and document.get("provisional") is True
+        public_fallback = (
+            isinstance(document, dict) and document.get("public_fallback") is True
+        )
         attributes = {
             "station": self.coordinator.api.station_id,
             "period": self.section.removeprefix("summary_"),
             "measure": self.measure,
-            "source": "euskalmet_api_aggregated_summary",
+            "source": (
+                "euskalmet_public_daily_provisional"
+                if public_fallback
+                else "euskalmet_api_aggregated_by_day_provisional"
+                if provisional
+                else "euskalmet_api_aggregated_summary"
+            ),
         }
         if isinstance(extreme, dict):
             attributes.update(

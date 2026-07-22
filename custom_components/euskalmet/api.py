@@ -33,8 +33,11 @@ from .geography import (
 from .readings import (
     available_aggregated_measure_keys,
     available_measure_keys,
+    combine_provisional_summaries,
     parse_aggregated_readings,
     parse_public_readings,
+    summarize_aggregated_day,
+    summarize_public_day,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -57,6 +60,10 @@ class EuskalmetAuthenticationError(EuskalmetAPIError):
 
 class EuskalmetConnectionError(EuskalmetAPIError):
     """No se pudo establecer o completar la conexión con la API."""
+
+
+class EuskalmetNotFoundError(EuskalmetAPIError):
+    """Raised when a requested Euskalmet resource does not exist yet."""
 
 
 def _slot_start(
@@ -255,6 +262,10 @@ class EuskalmetAPI:
                             raise EuskalmetAuthenticationError(
                                 f"Autenticación rechazada ({response.status})"
                             )
+
+                        if response.status == 404:
+                            body = (await response.text())[:500]
+                            raise EuskalmetNotFoundError(f"HTTP 404: {body}")
 
                         if response.status != 200:
                             body = (await response.text())[:500]
@@ -483,6 +494,22 @@ class EuskalmetAPI:
                 errors.append(err)
                 continue
             available.update(available_measure_keys(document, MEASURES))
+
+        if available:
+            self.supported_measurements = available
+            return available
+        # El dominio de los JSON publicos puede sufrir fallos de DNS aunque
+        # la API autenticada continue disponible. Los documentos agregados
+        # permiten detectar las mismas magnitudes sin depender de ese dominio.
+        for days_back in range(2):
+            try:
+                document = await self.get_aggregated_day(
+                    now - timedelta(days=days_back)
+                )
+            except EuskalmetAPIError as err:
+                errors.append(err)
+                continue
+            available.update(available_aggregated_measure_keys(document, MEASURES))
 
         if available:
             self.supported_measurements = available
@@ -824,13 +851,44 @@ class EuskalmetAPI:
         return await self._request(url)
 
     async def get_aggregated_day_summary(self, date: datetime | None = None) -> Any:
-        """Obtener el resumen agregado de un día."""
+        """Obtener el resumen del día local combinando documentos UTC."""
 
-        date = date or datetime.now(self.time_zone)
-        return await self._request(
-            f"{API_BASE}/readings/aggregated/summarized/byDay/"
-            f"forStation/{self.station_id}/at/{date:%Y/%m/%d}"
+        local_now = date or datetime.now(self.time_zone)
+        local_start = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+        utc_dates = {
+            local_start.astimezone(UTC).date(),
+            (local_start + timedelta(days=1)).astimezone(UTC).date(),
+        }
+
+        async def load_utc_day(utc_date: object) -> dict[str, Any]:
+            target = datetime(
+                utc_date.year,
+                utc_date.month,
+                utc_date.day,
+                tzinfo=UTC,
+            )
+            try:
+                document = await self.get_aggregated_day(target)
+            except EuskalmetNotFoundError:
+                return summarize_public_day(
+                    await self._public_readings_document(self.station_id, target),
+                    MEASURES,
+                    target,
+                    local_now,
+                )
+            return summarize_aggregated_day(document, local_now)
+
+        results = await asyncio.gather(
+            *(load_utc_day(utc_date) for utc_date in sorted(utc_dates)),
+            return_exceptions=True,
         )
+        documents = [result for result in results if isinstance(result, dict)]
+        if not documents:
+            errors = [result for result in results if isinstance(result, Exception)]
+            if errors:
+                raise errors[-1]
+            return {"items": [], "provisional": True}
+        return combine_provisional_summaries(documents)
 
     async def get_aggregated_month_summary(self, date: datetime | None = None) -> Any:
         """Obtener el resumen agregado de un mes."""
@@ -881,33 +939,64 @@ class EuskalmetAPI:
         return forecast
 
     async def get_hourly_forecast(self) -> dict[str, Any]:
-        """Obtener la previsión horaria completa."""
+        """Obtener y combinar la previsión horaria de hoy y mañana."""
 
         today = datetime.now().astimezone()
         region = quote(self.region, safe="")
         zone = quote(self.zone, safe="")
         location = quote(self.location, safe="")
 
-        url = (
-            f"{API_BASE}/weather/"
-            f"regions/{region}/"
-            f"zones/{zone}/"
-            f"locations/{location}/"
-            f"forecast/trends/measures/"
-            f"at/{today:%Y/%m/%d}/"
-            f"for/{today:%Y%m%d}"
+        async def get_for(target: datetime) -> dict[str, Any]:
+            url = (
+                f"{API_BASE}/weather/"
+                f"regions/{region}/"
+                f"zones/{zone}/"
+                f"locations/{location}/"
+                f"forecast/trends/measures/"
+                f"at/{today:%Y/%m/%d}/"
+                f"for/{target:%Y%m%d}"
+            )
+            data = await self._request(url)
+            if not isinstance(data, dict):
+                raise EuskalmetAPIError(
+                    "La previsión horaria no es un objeto JSON"
+                )
+            return data
+
+        targets = (today, today + timedelta(days=1))
+        results = await asyncio.gather(
+            *(get_for(target) for target in targets),
+            return_exceptions=True,
         )
 
-        # Se devuelve el JSON completo para conservar:
-        # - "for": fecha de validez
-        # - "at": fecha de emisión
-        # - "trends.set": bloques horarios
-        data = await self._request(url)
+        documents: list[tuple[datetime, dict[str, Any]]] = []
+        errors: list[Exception] = []
+        for target, result in zip(targets, results, strict=True):
+            if isinstance(result, Exception):
+                errors.append(result)
+                continue
+            documents.append((target, result))
 
-        if not isinstance(data, dict):
-            raise EuskalmetAPIError("La previsión horaria no es un objeto JSON")
+        if not documents:
+            raise EuskalmetAPIError(
+                f"No se pudo obtener la previsión horaria: {errors[-1]}"
+            ) from errors[-1]
 
-        return data
+        merged = dict(documents[0][1])
+        merged_items: list[dict[str, Any]] = []
+        for target, document in documents:
+            trends = document.get("trends")
+            items = trends.get("set") if isinstance(trends, dict) else None
+            if not isinstance(items, list):
+                continue
+            for item in items:
+                if isinstance(item, dict):
+                    merged_items.append(
+                        {**item, "_forecast_date": target.date().isoformat()}
+                    )
+
+        merged["trends"] = {"set": merged_items}
+        return merged
 
     @staticmethod
     def _empty_alerts() -> dict[str, Any]:

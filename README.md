@@ -16,8 +16,7 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Estado: **candidata final de mantenimiento**. La versión actual es
-> `2.9.1-beta.7`.
+> Estado: **versión estable**. La versión actual es `2.9.1`.
 > Corrige la previsión horaria al final del día, la detección de magnitudes ante
 > fallos del dominio público y los resúmenes diarios durante el cambio de fecha
 > entre UTC y la zona horaria de Home Assistant.
@@ -39,14 +38,14 @@ de Euskalmet y Open Data Euskadi.
 
 ## Vista previa
 
-![Panel de Euskalmet con radar, históricos, avisos y observaciones](docs/images/panel-euskalmet.png)
+![Panel de Euskalmet con radar, históricos, avisos y observaciones](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/panel-euskalmet.png)
 
 La entidad meteorológica ofrece previsión diaria y horaria desde el diálogo
 nativo de Home Assistant:
 
 | Previsión diaria | Previsión horaria |
 | --- | --- |
-| ![Previsión diaria de Euskalmet](docs/images/prevision-diaria.png) | ![Previsión horaria de Euskalmet](docs/images/prevision-horaria.png) |
+| ![Previsión diaria de Euskalmet](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/prevision-diaria.png) | ![Previsión horaria de Euskalmet](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/prevision-horaria.png) |
 
 ## Requisitos
 
@@ -54,6 +53,20 @@ nativo de Home Assistant:
 2. HACS para la instalación recomendada.
 3. Credenciales personales de acceso a la API de Euskalmet: correo electrónico
    y clave privada (privatekey.pem).
+
+### Obtener las credenciales de Open Data Euskadi
+
+Las credenciales se solicitan en el
+[portal de claves de Open Data Euskadi](https://api.euskadi.eus/opendata-apikey#/):
+
+1. Pulsa **Registrarse** y completa el formulario.
+2. Activa la cuenta desde el enlace incluido en el correo electrónico que
+   recibirás.
+3. Accede al portal y descarga el archivo ZIP con las claves. Para configurar
+   la integración necesitarás el correo electrónico registrado y el archivo
+   `privatekey.pem` incluido en el ZIP.
+
+![Acceso y registro en Open Data Euskadi](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/registro-opendata-euskadi.png)
 
 La integración no incorpora credenciales compartidas. El JWT se firma
 localmente mediante RS256 en la instalación de Home Assistant del usuario.
@@ -118,12 +131,17 @@ radar_opacity: 1
 past_minutes: 360
 show_color_bar: false
 zoom_level: 7
+center_latitude: zone.home
+center_longitude: zone.home
 ```
 
 La tarjeta obtiene los fotogramas autenticados a través de la integración. No
 expone las credenciales de Euskalmet al navegador. La capa utiliza los límites
 geográficos publicados por el visor oficial de Kapildui y permanece anclada al
 mapa al desplazarlo, ampliarlo, reproducirlo o pausarlo.
+
+El centro se fija en `zone.home` para que el mapa no siga automáticamente la
+ubicación del teléfono cuando se visualiza desde un dispositivo móvil.
 
 El radar de Kapildui es común para todas las estaciones. Si existen varias
 entradas, la tarjeta selecciona automáticamente una de ellas. Opcionalmente
@@ -162,25 +180,26 @@ Copiar ID de la entrada**.
 ### Avisos meteorológicos
 
 Los avisos pueden mostrarse sin JavaScript adicional mediante una tarjeta de
-entidad o una tarjeta Markdown/template utilizando `sensor.nivel_de_aviso` o
-`binary_sensor.aviso_meteorologico`.
+entidad o una tarjeta Markdown/template. Cada instalación puede asignar un ID
+distinto según su registro de entidades. Copia el ID de «Nivel de aviso» y
+sustituye `sensor.arkauti_nivel_de_aviso` en el ejemplo si fuese diferente.
 
 ```yaml
 type: markdown
 title: Avisos meteorológicos
 content: >-
-  {% set aviso = states('sensor.nivel_de_aviso') %}
+  {% set entidad = 'sensor.arkauti_nivel_de_aviso' %}
+  {% set aviso = states(entidad) %}
   {% if aviso not in ['unknown', 'unavailable', 'none', 'Sin avisos'] %}
     **Nivel de aviso:** {{ aviso }}
 
-    {{ state_attr('sensor.nivel_de_aviso', 'description') | default('', true) }}
+    {{ state_attr(entidad, 'description') | default('', true) }}
   {% else %}
     No hay avisos meteorológicos activos.
   {% endif %}
 ```
 
-Sustituye el identificador por el de tu entidad si Home Assistant ha añadido
-el nombre de la estación.
+El ID puede copiarse desde los ajustes de la propia entidad en Home Assistant.
 
 ## Actualización y tolerancia a fallos
 
@@ -220,7 +239,7 @@ Antes de abrir una incidencia:
 ## Fuente de datos, marca y atribuciones
 
 <p align="center">
-  <img src="docs/images/euskalmet-logo.jpg" alt="Euskalmet — Agencia Vasca de Meteorología" width="360">
+  <img src="https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/euskalmet-logo.jpg" alt="Euskalmet — Agencia Vasca de Meteorología" width="360">
 </p>
 
 **Datos meteorológicos proporcionados por Euskalmet — Agencia Vasca de

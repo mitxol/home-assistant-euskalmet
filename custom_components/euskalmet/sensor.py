@@ -12,7 +12,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, MEASURES
 from .coordinator import EuskalmetCoordinator
-from .entity import device_info, summary_device_info
+from .entity import device_info, pollen_device_info, summary_device_info
 from .formatting import degrees_to_compass
 
 PARALLEL_UPDATES = 0
@@ -179,7 +179,109 @@ async def async_setup_entry(
         if SUMMARY_REQUIRED_KEYS[config[3]] in supported
     )
 
+    pollen_species: set[str] = set()
+    pollen_total_added = False
+
+    def add_pollen_entities() -> None:
+        nonlocal pollen_total_added
+        pollen = (coordinator.data or {}).get("pollen", {})
+        species = pollen.get("species", {}) if isinstance(pollen, dict) else {}
+        if not isinstance(species, dict):
+            return
+
+        new_species = set(species) - pollen_species
+        pollen_entities: list[SensorEntity] = []
+        if not pollen_total_added:
+            pollen_entities.append(EuskalmetPollenTotalSensor(coordinator))
+            pollen_total_added = True
+        pollen_entities.extend(
+            EuskalmetPollenSpeciesSensor(
+                coordinator,
+                specie_id,
+                str(species[specie_id].get("name") or specie_id),
+            )
+            for specie_id in sorted(new_species)
+            if isinstance(species[specie_id], dict)
+        )
+        pollen_species.update(new_species)
+        if pollen_entities:
+            async_add_entities(pollen_entities)
+
     async_add_entities(entities)
+    add_pollen_entities()
+    entry.async_on_unload(coordinator.async_add_listener(add_pollen_entities))
+
+
+class EuskalmetPollenSensor(CoordinatorEntity, SensorEntity):
+    """Base for measurements from an Open Data Euskadi pollen station."""
+
+    _attr_has_entity_name = True
+    _attr_native_unit_of_measurement = "grains/m³"
+    _attr_state_class = "measurement"
+    _attr_icon = "mdi:flower-pollen"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return pollen_device_info(
+            self.coordinator.api.station_id,
+            self.coordinator.api.pollen_municipality_id,
+            self.coordinator.api.pollen_municipality_name,
+        )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        pollen = (self.coordinator.data or {}).get("pollen", {})
+        return {
+            "observed_on": pollen.get("observed_on"),
+            "municipality_id": pollen.get("municipality_id"),
+            "municipality_name": pollen.get("municipality_name"),
+            "source": "opendata_euskadi_pollen_api",
+        }
+
+
+class EuskalmetPollenTotalSensor(EuskalmetPollenSensor):
+    """Total pollen/spore count in the newest published sample."""
+
+    _attr_name = "Polen total"
+
+    def __init__(self, coordinator: EuskalmetCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = (
+            f"{coordinator.api.station_id}_pollen_"
+            f"{coordinator.api.pollen_municipality_id}_total"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        return (self.coordinator.data or {}).get("pollen", {}).get("total")
+
+
+class EuskalmetPollenSpeciesSensor(EuskalmetPollenSensor):
+    """Pollen/spore count for one taxon."""
+
+    def __init__(
+        self,
+        coordinator: EuskalmetCoordinator,
+        specie_id: str,
+        specie_name: str,
+    ) -> None:
+        super().__init__(coordinator)
+        self.specie_id = specie_id
+        self._attr_name = specie_name
+        self._attr_unique_id = (
+            f"{coordinator.api.station_id}_pollen_"
+            f"{coordinator.api.pollen_municipality_id}_{specie_id}"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        pollen = (self.coordinator.data or {}).get("pollen", {})
+        if not pollen.get("observed_on"):
+            return None
+        measurement = pollen.get("species", {}).get(self.specie_id)
+        if not isinstance(measurement, dict):
+            return 0.0
+        return measurement.get("value")
 
 
 class EuskalmetSummarySensor(CoordinatorEntity, SensorEntity):

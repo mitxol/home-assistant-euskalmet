@@ -82,6 +82,8 @@ async def async_setup_entry(
         station_id=entry.data.get("station_id", "C016"),
         station_name=entry.data.get("station_name", "Arkauti"),
         alert_zone=entry.data.get("alert_zone", "TRANSITION"),
+        latitude=float(entry.data.get("latitude", hass.config.latitude)),
+        longitude=float(entry.data.get("longitude", hass.config.longitude)),
     )
     coordinator.config_entry_id = entry.entry_id
 

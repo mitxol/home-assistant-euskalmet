@@ -6,6 +6,7 @@ MANUFACTURER = "Euskalmet"
 MODEL = "Estación Meteorológica"
 
 API_BASE = "https://api.euskadi.eus/euskalmet"
+POLLEN_API_BASE = "https://api.euskadi.eus/pollen-quality"
 
 STATIONS_GEOJSON_URL = (
     "https://www.euskalmet.euskadi.eus/contenidos/"
@@ -20,6 +21,8 @@ PUBLIC_READINGS_URL = (
 DEFAULT_STATION = "C016"
 
 UPDATE_INTERVAL = timedelta(minutes=5)
+POLLEN_UPDATE_INTERVAL = timedelta(hours=6)
+POLLEN_LOOKBACK_DAYS = 60
 
 # Georreferenciacion publicada por Euskalmet para las capas de intensidad
 # y precipitacion acumulada del radar de Kapildui. Leaflet espera el orden

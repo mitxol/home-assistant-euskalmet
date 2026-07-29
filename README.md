@@ -16,10 +16,9 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Estado: **versión estable**. La versión actual es `2.9.1`.
-> Corrige la previsión horaria al final del día, la detección de magnitudes ante
-> fallos del dominio público y los resúmenes diarios durante el cambio de fecha
-> entre UTC y la zona horaria de Home Assistant.
+> Estado: **versión estable**. La versión actual es `2.10.0`.
+> Añade mediciones de polen de la estación oficial más cercana mediante la API
+> pública de Open Data Euskadi.
 
 ## Funciones
 
@@ -35,6 +34,7 @@ de Euskalmet y Open Data Euskadi.
 - Histórico consultado bajo demanda, sin importar datos antiguos a Recorder.
 - Caché y endpoints agregados para reducir el número de peticiones a la API.
 - Conservación del último valor válido ante respuestas temporales incompletas.
+- Recuento total y sensores dinámicos por tipo polínico.
 
 ## Vista previa
 
@@ -95,10 +95,15 @@ El asistente solicita las credenciales. Hay que introducir email y privatekey.pe
 después muestra las estaciones meteorológicas activas  con los sensores que 
 tiene disponibles (no todas las estaciones tienen todos los sensores). 
 Cada estación se configura como una entrada independiente. 
-La integración crea un dispositivo para las observaciones
-actuales y otro para resúmenes y estadísticas.
+La integración crea un dispositivo para las observaciones actuales, otro para
+resúmenes y estadísticas y otro para el polen. La captadora de Bilbao,
+Vitoria-Gasteiz o Donostia / San Sebastián se elige automáticamente por
+proximidad a la estación meteorológica.
 
 Solo se crean entidades para las magnitudes publicadas por la estación.
+Los tipos polínicos aparecen como entidades cuando la API los publica. Los
+datos proceden del Departamento de Salud, tienen periodicidad semanal y
+exponen la fecha efectiva de la muestra en el atributo `observed_on`.
 
 ## Tarjetas
 
@@ -204,9 +209,10 @@ El ID puede copiarse desde los ajustes de la propia entidad en Home Assistant.
 ## Actualización y tolerancia a fallos
 
 Las observaciones actuales se consultan mediante el endpoint agregado diario
-recomendado por Euskalmet. Previsión, avisos, radar y resúmenes se tratan como
-fuentes opcionales: un fallo temporal de una fuente no impide actualizar las
-demás.
+recomendado por Euskalmet. Previsión, avisos, radar, resúmenes y polen se
+tratan como fuentes opcionales: un fallo temporal de una fuente no impide
+actualizar las demás. El polen se consulta cada seis horas y conserva el
+último dato válido.
 
 Los resúmenes mensuales se almacenan en caché y los anuales se calculan a partir
 de los meses disponibles. Las rutas individuales anteriores se conservan como

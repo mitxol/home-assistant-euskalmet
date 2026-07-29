@@ -17,6 +17,8 @@ from .const import (
     API_BASE,
     DEFAULT_STATION,
     MEASURES,
+    POLLEN_API_BASE,
+    POLLEN_LOOKBACK_DAYS,
     PUBLIC_READINGS_URL,
     STATIONS_GEOJSON_URL,
 )
@@ -30,6 +32,7 @@ from .geography import (
     nearest_station,
     station_by_id,
 )
+from .pollen import parse_pollen_measurements
 from .readings import (
     available_aggregated_measure_keys,
     available_measure_keys,
@@ -146,6 +149,8 @@ class EuskalmetAPI:
         station_id: str = DEFAULT_STATION,
         station_name: str = "Arkauti",
         alert_zone: str = "TRANSITION",
+        pollen_municipality_id: str = "059",
+        pollen_municipality_name: str = "Vitoria-Gasteiz",
         time_zone: str = "Europe/Madrid",
     ) -> None:
         self.session = session
@@ -158,6 +163,8 @@ class EuskalmetAPI:
         self.location = location
 
         self.alert_zone = alert_zone
+        self.pollen_municipality_id = pollen_municipality_id
+        self.pollen_municipality_name = pollen_municipality_name
 
         try:
             self.time_zone = ZoneInfo(time_zone)
@@ -1331,6 +1338,26 @@ class EuskalmetAPI:
             raise request_errors[-1]
 
         return self._empty_radar()
+
+    async def get_pollen_measurements(self) -> dict[str, Any]:
+        """Obtener la medición de polen más reciente de la estación cercana."""
+
+        today = datetime.now(self.time_zone).date()
+        start = today - timedelta(days=POLLEN_LOOKBACK_DAYS)
+        url = (
+            f"{POLLEN_API_BASE}/measurements/municipalities/"
+            f"{quote(self.pollen_municipality_id, safe='')}/"
+            f"from/{start.isoformat()}/to/{today.isoformat()}"
+        )
+        document = await self._request_public(url)
+        try:
+            return parse_pollen_measurements(
+                document,
+                self.pollen_municipality_id,
+                self.pollen_municipality_name,
+            )
+        except ValueError as err:
+            raise EuskalmetAPIError(str(err)) from err
 
     async def close(self) -> None:
         """La sesión HTTP la gestiona Home Assistant."""

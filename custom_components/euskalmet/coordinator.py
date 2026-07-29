@@ -15,7 +15,8 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .api import EuskalmetAPI, EuskalmetAPIError, EuskalmetNotFoundError
-from .const import UPDATE_INTERVAL
+from .const import POLLEN_UPDATE_INTERVAL, UPDATE_INTERVAL
+from .pollen import nearest_pollen_station
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,8 +35,11 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
         station_id: str,
         station_name: str,
         alert_zone: str,
+        latitude: float,
+        longitude: float,
     ) -> None:
         session = async_get_clientsession(hass)
+        pollen_id, pollen_name = nearest_pollen_station(latitude, longitude)
 
         self.api = EuskalmetAPI(
             session=session,
@@ -47,6 +51,8 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
             station_id=station_id,
             station_name=station_name,
             alert_zone=alert_zone,
+            pollen_municipality_id=pollen_id,
+            pollen_municipality_name=pollen_name,
             time_zone=hass.config.time_zone,
         )
         self._failed_endpoints: set[str] = set()
@@ -54,6 +60,8 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
         self._month_summary: Any = None
         self._month_summary_updated: datetime | None = None
         self._year_months: dict[int, Any] = {}
+        self._pollen: dict[str, Any] | None = None
+        self._pollen_updated: datetime | None = None
 
         super().__init__(
             hass,
@@ -138,6 +146,14 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
             if month_due
             else asyncio.sleep(0, result=self._month_summary)
         )
+        pollen_due = self._pollen_updated is None or datetime.now(
+            UTC
+        ) - self._pollen_updated >= POLLEN_UPDATE_INTERVAL
+        pollen_call = (
+            self.api.get_pollen_measurements()
+            if pollen_due
+            else asyncio.sleep(0, result=self._pollen)
+        )
 
         results = await asyncio.gather(
             self.api.get_all_measurements(),
@@ -147,6 +163,7 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
             self.api.get_hourly_forecast(),
             self.api.get_alerts(),
             self.api.get_radar_report(),
+            pollen_call,
             return_exceptions=True,
         )
 
@@ -158,6 +175,7 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
             hourly_result,
             alerts_result,
             radar_result,
+            pollen_result,
         ) = results
 
         if isinstance(current_result, asyncio.CancelledError):
@@ -188,6 +206,10 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
             radar_result,
             self.api._empty_radar(),
         )
+        pollen = self._optional_result("pollen", pollen_result, self._pollen or {})
+        if not isinstance(pollen_result, Exception) and pollen_due:
+            self._pollen = pollen
+            self._pollen_updated = datetime.now(UTC)
         summary_day = self._optional_result("summary_day", summary_day_result, {})
         summary_month = self._optional_result(
             "summary_month", summary_month_result, self._month_summary or {}
@@ -228,6 +250,7 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
             "forecast_hourly": hourly,
             "alerts": alerts,
             "radar": radar,
+            "pollen": pollen,
         }
 
     async def async_shutdown(self) -> None:

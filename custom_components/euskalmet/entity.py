@@ -30,3 +30,20 @@ def summary_device_info(station_id: str, station_name: str) -> DeviceInfo:
         sw_version="OpenData API",
         via_device=(DOMAIN, station_id),
     )
+
+
+def pollen_device_info(
+    station_id: str,
+    municipality_id: str,
+    municipality_name: str,
+) -> DeviceInfo:
+    """Build the device representing an official pollen station."""
+
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"pollen_{station_id}_{municipality_id}")},
+        manufacturer="Gobierno Vasco - Departamento de Salud",
+        model="Estación de polen",
+        name=f"Polen - {municipality_name}",
+        sw_version="Open Data Euskadi API",
+        via_device=(DOMAIN, station_id),
+    )

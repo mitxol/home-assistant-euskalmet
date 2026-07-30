@@ -8,7 +8,7 @@ class EuskalmetAlertCard extends HTMLElement {
 
   setConfig(config) {
     if (!config.entity) {
-      throw new Error("Debes indicar el sensor de nivel o el aviso meteorológico de Euskalmet");
+      throw new Error(this._text().missingEntity);
     }
     this._config = config;
     this._render();
@@ -37,19 +37,40 @@ class EuskalmetAlertCard extends HTMLElement {
     return String(value).toLowerCase();
   }
 
+  _text() {
+    const language = this._hass?.locale?.language || navigator.language || "es";
+    const eu = String(language).toLowerCase().startsWith("eu");
+    return eu ? {
+      missingEntity: "Euskalmeteko abisu-mailaren sentsorea edo abisu meteorologikoa adierazi behar duzu",
+      labels: {
+        none: "Abisurik ez", yellow: "Abisu horia", orange: "Abisu laranja",
+        red: "Abisu gorria", unavailable: "Abisuak ez daude eskuragarri",
+        unknown: "Abisuak ez daude eskuragarri",
+      },
+      defaultTitle: "Abisu meteorologikoa",
+      activeRisk: (count) => `${count} arrisku aktibo`,
+      noRisks: "Ez dago arrisku meteorologiko aktiborik",
+      noDetails: "Ez dago xehetasunik",
+    } : {
+      missingEntity: "Debes indicar el sensor de nivel o el aviso meteorológico de Euskalmet",
+      labels: {
+        none: "Sin avisos", yellow: "Aviso amarillo", orange: "Aviso naranja",
+        red: "Aviso rojo", unavailable: "Avisos no disponibles",
+        unknown: "Avisos no disponibles",
+      },
+      defaultTitle: "Aviso meteorológico",
+      activeRisk: (count) => `${count} riesgo${count === 1 ? "" : "s"} activo${count === 1 ? "" : "s"}`,
+      noRisks: "No hay riesgos meteorológicos activos",
+      noDetails: "Sin detalles disponibles",
+    };
+  }
+
   _render() {
     if (!this._config || !this._hass) return;
 
     const state = this._state();
     const severity = this._severity(state);
-    const labels = {
-      none: "Sin avisos",
-      yellow: "Aviso amarillo",
-      orange: "Aviso naranja",
-      red: "Aviso rojo",
-      unavailable: "Avisos no disponibles",
-      unknown: "Avisos no disponibles",
-    };
+    const text = this._text();
     const alerts = Array.isArray(state?.attributes?.alerts)
       ? state.attributes.alerts
       : [];
@@ -113,18 +134,22 @@ class EuskalmetAlertCard extends HTMLElement {
     `;
 
     this.shadowRoot.querySelector(".title").textContent =
-      this._config.title || labels[severity] || "Aviso meteorológico";
+      this._config.title || text.labels[severity] || text.defaultTitle;
     this.shadowRoot.querySelector(".summary").textContent = alerts.length
-      ? `${alerts.length} riesgo${alerts.length === 1 ? "" : "s"} activo${alerts.length === 1 ? "" : "s"}`
-      : (severity === "none" ? "No hay riesgos meteorológicos activos" : "Sin detalles disponibles");
+      ? text.activeRisk(alerts.length)
+      : (severity === "none" ? text.noRisks : text.noDetails);
 
     const risks = this.shadowRoot.querySelector(".risks");
     const items = alerts.length
       ? alerts
       : descriptions.map((description) => ({ description }));
+    const language = String(this._hass?.locale?.language || "es")
+      .toLowerCase().startsWith("eu") ? "eu" : "es";
 
     for (const alert of items) {
-      if (!alert?.description) continue;
+      const translatedDescription =
+        alert?.descriptions_by_language?.[language] || alert?.description;
+      if (!translatedDescription) continue;
       const item = document.createElement("li");
       item.className = "risk";
       if (alert.cause) {
@@ -135,7 +160,7 @@ class EuskalmetAlertCard extends HTMLElement {
       }
       const description = document.createElement("div");
       description.className = "description";
-      description.textContent = alert.description;
+      description.textContent = translatedDescription;
       item.appendChild(description);
       risks.appendChild(item);
     }
@@ -147,9 +172,12 @@ if (!customElements.get("euskalmet-alert-card")) {
 }
 
 window.customCards = window.customCards || [];
+const euskalmetAlertLanguage = navigator.language?.toLowerCase().startsWith("eu");
 window.customCards.push({
   type: "euskalmet-alert-card",
-  name: "Euskalmet: avisos meteorológicos",
-  description: "Relaciona el nivel de aviso con la descripción de cada riesgo activo.",
+  name: euskalmetAlertLanguage ? "Euskalmet: abisu meteorologikoak" : "Euskalmet: avisos meteorológicos",
+  description: euskalmetAlertLanguage
+    ? "Abisu-maila arrisku aktibo bakoitzaren deskribapenarekin lotzen du."
+    : "Relaciona el nivel de aviso con la descripción de cada riesgo activo.",
   preview: true,
 });

@@ -31,7 +31,7 @@ class EuskalmetRadarCamera(CoordinatorEntity, Camera):
     """Cámara con la última imagen del radar de precipitación."""
 
     _attr_has_entity_name = True
-    _attr_name = "Radar de precipitación"
+    _attr_translation_key = "precipitation_radar"
     _attr_content_type = "image/png"
 
     def __init__(self, coordinator: EuskalmetCoordinator) -> None:

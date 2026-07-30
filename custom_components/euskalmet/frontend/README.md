@@ -57,6 +57,19 @@ title: Histórico de Arkaute
 
 ## Avisos meteorológicos
 
-Los avisos pueden mostrarse mediante una tarjeta de entidad o template usando
-`sensor.nivel_de_aviso` o `binary_sensor.aviso_meteorologico`, sin necesidad de
-añadir un recurso JavaScript.
+Recurso:
+
+```text
+/euskalmet_static/euskalmet-alert-card.js?v=1
+```
+
+Tarjeta:
+
+```yaml
+type: custom:euskalmet-alert-card
+entity: sensor.arkauti_nivel_de_aviso
+```
+
+La tarjeta adapta automáticamente sus textos al castellano o al euskera y
+muestra cada riesgo activo con su descripción. Sustituye la entidad del ejemplo
+por el ID del sensor «Nivel de aviso» de tu estación.

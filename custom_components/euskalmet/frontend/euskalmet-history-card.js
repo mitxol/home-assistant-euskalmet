@@ -7,8 +7,8 @@ class EuskalmetHistoryCard extends HTMLElement {
   }
 
   setConfig(config) {
-    if (!config) throw new Error("Falta la configuración de la tarjeta");
-    this.config = { title: "Histórico Euskalmet", measure: "temperature", ...config };
+    if (!config) throw new Error(this.text().missingConfig);
+    this.config = { measure: "temperature", ...config };
     this.render();
     this.scheduleLoad();
   }
@@ -22,6 +22,42 @@ class EuskalmetHistoryCard extends HTMLElement {
   disconnectedCallback() { clearTimeout(this.retryTimer); }
   getCardSize() { return 6; }
   static getStubConfig() { return { measure: "temperature" }; }
+
+  text() {
+    const language = this._hass?.locale?.language || navigator.language || "es";
+    const eu = String(language).toLowerCase().startsWith("eu");
+    return eu ? {
+      missingConfig: "Txartelaren konfigurazioa falta da",
+      title: "Euskalmet historikoa",
+      loading: "Kargatzen…",
+      loadError: "Ezin izan da historikoa kargatu.",
+      retry: "Saiatu berriro",
+      noData: "Ez dago hilabete honetako daturik.",
+      fields: { min: "minimoa", mean: "batezbestekoa", max: "maximoa", total: "guztira" },
+      measures: {
+        temperature: "Tenperatura (°C)", precipitation: "Prezipitazioa (mm)",
+        humidity: "Hezetasuna (%)", pressure: "Presioa (hPa)",
+        irradiance: "Erradiazioa (W/m²)", mean_speed: "Batez besteko haizea (m/s)",
+        max_speed: "Haize-bolada (m/s)",
+      },
+      locale: "eu-ES",
+    } : {
+      missingConfig: "Falta la configuración de la tarjeta",
+      title: "Histórico Euskalmet",
+      loading: "Cargando…",
+      loadError: "No se pudo cargar el histórico.",
+      retry: "Reintentar",
+      noData: "No hay datos para este mes.",
+      fields: { min: "mínima", mean: "media", max: "máxima", total: "total" },
+      measures: {
+        temperature: "Temperatura (°C)", precipitation: "Precipitación (mm)",
+        humidity: "Humedad (%)", pressure: "Presión (hPa)",
+        irradiance: "Radiación (W/m²)", mean_speed: "Viento medio (m/s)",
+        max_speed: "Racha (m/s)",
+      },
+      locale: "es-ES",
+    };
+  }
 
   scheduleLoad(force = false) {
     if (!this.isConnected || !this._hass || !this.config || this.loading) return;
@@ -95,11 +131,8 @@ class EuskalmetHistoryCard extends HTMLElement {
 
   render() {
     if (!this.config) return;
-    const labels = {
-      temperature: "Temperatura (°C)", precipitation: "Precipitación (mm)",
-      humidity: "Humedad (%)", pressure: "Presión (hPa)", irradiance: "Radiación (W/m²)",
-      mean_speed: "Viento medio (m/s)", max_speed: "Racha (m/s)",
-    };
+    const text = this.text();
+    const labels = text.measures;
     const fields = this.config.measure === "temperature" ? ["min", "mean", "max"]
       : this.config.measure === "precipitation" ? ["total"] : ["mean", "max"];
     const series = fields.map((field) => ({ field, points: this.points(field) }));
@@ -107,22 +140,22 @@ class EuskalmetHistoryCard extends HTMLElement {
     const min = Math.min(...values, 0);
     const max = Math.max(...values, 1);
     const colors = ["#42a5f5", "#66bb6a", "#ef5350"];
-    const month = this.date.toLocaleDateString("es-ES", { month: "long", year: "numeric" });
+    const month = this.date.toLocaleDateString(text.locale, { month: "long", year: "numeric" });
     const graph = `<div class="legend">${series.map((item, index) =>
-      `<span><i style="background:${colors[index]}"></i>${item.field}</span>`).join("")}</div>
+      `<span><i style="background:${colors[index]}"></i>${text.fields[item.field]}</span>`).join("")}</div>
       <svg viewBox="0 0 600 260"><line class="grid" x1="30" y1="230" x2="585" y2="230"/>
       ${series.map((item, index) => `<path class="line" stroke="${colors[index]}" d="${this.path(item.points, min, max)}"/>`).join("")}
       <text x="30" y="250">1</text><text x="555" y="250">31</text><text x="2" y="18">${max.toFixed(1)}</text><text x="2" y="230">${min.toFixed(1)}</text></svg>`;
-    const body = this.loading ? '<div class="message">Cargando…</div>'
-      : this.error ? `<div class="message">No se pudo cargar el histórico.<small>${this.error}</small><button id="retry">Reintentar</button></div>`
-        : values.length ? graph : '<div class="message">No hay datos para este mes.</div>';
+    const body = this.loading ? `<div class="message">${text.loading}</div>`
+      : this.error ? `<div class="message">${text.loadError}<small>${this.error}</small><button id="retry">${text.retry}</button></div>`
+        : values.length ? graph : `<div class="message">${text.noData}</div>`;
     this.shadowRoot.innerHTML = `<style>
       :host{display:block}ha-card{padding:16px}header{display:flex;justify-content:space-between;align-items:center}h2{font-size:18px;margin:0}
       .tools,.legend{display:flex;gap:8px;align-items:center}.legend{gap:14px;font-size:12px;margin:8px 0;flex-wrap:wrap}
       button,select{color:var(--primary-text-color);background:transparent;border:1px solid var(--divider-color);border-radius:8px;padding:7px}
       .legend i{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}svg{width:100%;height:260px}.grid{stroke:var(--divider-color)}
       .line{fill:none;stroke-width:2}text{fill:currentColor}.message{min-height:220px;display:flex;gap:12px;flex-direction:column;align-items:center;justify-content:center;text-align:center}
-    </style><ha-card><header><div><h2>${this.config.title}</h2><small>${month}</small></div><div class="tools"><button id="prev">‹</button><button id="next">›</button></div></header>
+    </style><ha-card><header><div><h2>${this.config.title || text.title}</h2><small>${month}</small></div><div class="tools"><button id="prev">‹</button><button id="next">›</button></div></header>
       <select id="measure">${Object.entries(labels).map(([key, label]) => `<option value="${key}" ${key === this.config.measure ? "selected" : ""}>${label}</option>`).join("")}</select>${body}</ha-card>`;
     this.shadowRoot.querySelector("#prev")?.addEventListener("click", () => this.shift(-1));
     this.shadowRoot.querySelector("#next")?.addEventListener("click", () => this.shift(1));
@@ -136,5 +169,10 @@ if (!customElements.get("euskalmet-history-card")) {
 }
 window.customCards = window.customCards || [];
 if (!window.customCards.some((card) => card.type === "euskalmet-history-card")) {
-  window.customCards.push({ type: "euskalmet-history-card", name: "Euskalmet - Histórico", description: "Gráficos diarios históricos de Euskalmet" });
+  const eu = navigator.language?.toLowerCase().startsWith("eu");
+  window.customCards.push({
+    type: "euskalmet-history-card",
+    name: eu ? "Euskalmet - Historikoa" : "Euskalmet - Histórico",
+    description: eu ? "Euskalmeteko eguneko grafiko historikoak" : "Gráficos diarios históricos de Euskalmet",
+  });
 }

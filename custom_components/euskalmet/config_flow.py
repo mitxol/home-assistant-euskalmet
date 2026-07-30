@@ -21,6 +21,17 @@ from .api import (
 from .const import DOMAIN, MEASURES
 from .geography import LocationDiscoveryError
 
+EU_MEASURE_NAMES = {
+    "temperature": "Tenperatura",
+    "humidity": "Hezetasuna",
+    "pressure": "Presioa",
+    "wind_speed": "Haizearen abiadura",
+    "wind_gust": "Haize-bolada handiena",
+    "wind_direction": "Haizearen norabidea",
+    "irradiance": "Eguzki-erradiazioa",
+    "precipitation": "Prezipitazioa",
+}
+
 
 class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Configurar credenciales y una estación meteorológica elegida."""
@@ -35,25 +46,30 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._stations: list[dict[str, Any]] = []
         self._selected_station: dict[str, Any] | None = None
 
-    @staticmethod
-    def _measure_names(keys: list[str]) -> str:
+    def _measure_names(self, keys: list[str]) -> str:
         """Mostrar nombres legibles de una lista de magnitudes."""
 
-        return ", ".join(str(MEASURES[key]["name"]) for key in keys)
+        use_eu = str(self.hass.config.language).lower().startswith("eu")
+        return ", ".join(
+            EU_MEASURE_NAMES[key] if use_eu else str(MEASURES[key]["name"])
+            for key in keys
+        )
 
-    @classmethod
-    def _station_status(cls, station: dict[str, Any]) -> str:
+    def _station_status(self, station: dict[str, Any]) -> str:
         """Resumir capacidades sin hacer excesivamente largo el selector."""
 
         available = station["available_measures"]
         missing = station["missing_measures"]
         count = f"{len(available)}/{len(MEASURES)}"
+        use_eu = str(self.hass.config.language).lower().startswith("eu")
 
         if not missing:
-            return f"{count} completa"
+            return f"{count} osoa" if use_eu else f"{count} completa"
         if len(available) <= 3:
-            return f"{count} · solo {cls._measure_names(available)}"
-        return f"{count} · sin {cls._measure_names(missing)}"
+            qualifier = "soilik" if use_eu else "solo"
+            return f"{count} · {qualifier} {self._measure_names(available)}"
+        qualifier = "gabe" if use_eu else "sin"
+        return f"{count} · {qualifier} {self._measure_names(missing)}"
 
     async def _async_create_selected_entry(self) -> ConfigFlowResult:
         """Resolver los catálogos y crear la entrada seleccionada."""

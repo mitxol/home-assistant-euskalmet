@@ -53,6 +53,7 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
             alert_zone=alert_zone,
             pollen_municipality_id=pollen_id,
             pollen_municipality_name=pollen_name,
+            preferred_language=hass.config.language,
             time_zone=hass.config.time_zone,
         )
         self._failed_endpoints: set[str] = set()

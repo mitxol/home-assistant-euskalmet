@@ -38,7 +38,7 @@ class EuskalmetAlertBinarySensor(
     """Indica si existe algún aviso meteorológico activo."""
 
     _attr_has_entity_name = True
-    _attr_name = "Aviso meteorológico"
+    _attr_translation_key = "weather_alert"
 
     def __init__(self, coordinator: EuskalmetCoordinator) -> None:
         super().__init__(coordinator)

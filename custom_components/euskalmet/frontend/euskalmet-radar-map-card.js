@@ -25,7 +25,7 @@ class EuskalmetRadarMapCard extends HTMLElement {
 
   setConfig(config) {
     if (!config.entity) {
-      throw new Error("Debes indicar la entidad camera del radar de Euskalmet");
+      throw new Error(this._text().missingEntity);
     }
 
     this._config = {
@@ -68,6 +68,50 @@ class EuskalmetRadarMapCard extends HTMLElement {
 
   getCardSize() {
     return 8;
+  }
+
+  _text() {
+    const language = this._hass?.locale?.language || navigator.language || "es";
+    const eu = String(language).toLowerCase().startsWith("eu");
+    return eu ? {
+      missingEntity: "Euskalmeteko radar-kameraren entitatea adierazi behar duzu",
+      title: "Prezipitazio-radarra", waiting: "Datuen zain…",
+      mapLabel: "Euskalmeteko radarra OpenStreetMapen", controls: "Animazio-kontrolak",
+      previous: "Aurreko fotograma", play: "Animazioa erreproduzitu",
+      pause: "Animazioa pausatu", next: "Hurrengo fotograma",
+      latest: "Eskuragarri dagoen azken irudia", frame: "Radar-fotograma",
+      speed: "Erreprodukzio-abiadura", legend: "Prezipitazio-intentsitatearen legenda",
+      precipitation: "PREZIPITAZIOAK", weak: "Ahulak", moderate: "Ertainak",
+      strong: "Indartsuak", veryStrong: "Oso indartsuak", torrential: "Uholde-euriak",
+      opacity: "Opakutasuna", coverage: "Estaldura ikusi", reload: "Datuak berritu",
+      leafletError: "Ezin izan da Leaflet kargatu", entityMissing: "Ez dago entitate hau",
+      unavailable: "Radar-irudia ez dago eskuragarri", loadingTimeline: "Denbora-lerroa kargatzen…",
+      noFrames: "Oraindik ez dago animatzeko fotogramarik",
+      frames: (count) => `${count} fotograma · 10 min-ko tartea`,
+      animationUnavailable: "Animazioa ez dago eskuragarri",
+      websocketUnavailable: "WebSocket ez dago eskuragarri",
+      frameError: "Ezin izan da fotograma kargatu", timeUnavailable: "Ordua ez dago eskuragarri",
+      playing: "Erreproduzitzen", preparing: "Prestatzen", animationReady: "Animazioa prest",
+      updateError: "Ezin izan da radarra eguneratu",
+    } : {
+      missingEntity: "Debes indicar la entidad camera del radar de Euskalmet",
+      title: "Radar de precipitación", waiting: "Esperando datos…",
+      mapLabel: "Radar de Euskalmet sobre OpenStreetMap", controls: "Controles de animación",
+      previous: "Fotograma anterior", play: "Reproducir animación", pause: "Pausar animación",
+      next: "Fotograma siguiente", latest: "Última captura disponible",
+      frame: "Fotograma del radar", speed: "Velocidad de reproducción",
+      legend: "Leyenda de intensidad de precipitación", precipitation: "PRECIPITACIONES",
+      weak: "Débiles", moderate: "Moderadas", strong: "Fuertes",
+      veryStrong: "Muy fuertes", torrential: "Torrenciales", opacity: "Opacidad",
+      coverage: "Ver cobertura", reload: "Recargar datos", leafletError: "No se pudo cargar Leaflet",
+      entityMissing: "No existe la entidad", unavailable: "La imagen del radar no está disponible",
+      loadingTimeline: "Cargando línea temporal…", noFrames: "Todavía no hay fotogramas para animar",
+      frames: (count) => `${count} fotogramas · intervalo de 10 min`,
+      animationUnavailable: "Animación no disponible", websocketUnavailable: "WebSocket no disponible",
+      frameError: "No se pudo cargar el fotograma", timeUnavailable: "Hora no disponible",
+      playing: "Reproduciendo", preparing: "Preparando", animationReady: "Animación lista",
+      updateError: "No se pudo actualizar el radar",
+    };
   }
 
   getGridOptions() {
@@ -276,42 +320,43 @@ class EuskalmetRadarMapCard extends HTMLElement {
       }
     `;
 
+    const t = this._text();
     const card = document.createElement("section");
     card.className = "radar-card";
     card.innerHTML = `
       <div class="header">
         <div class="heading">
-          <div class="title">Radar de precipitación</div>
-          <div class="summary" aria-live="polite">Esperando datos…</div>
+          <div class="title">${t.title}</div>
+          <div class="summary" aria-live="polite">${t.waiting}</div>
         </div>
         <div class="loading" aria-live="polite"></div>
       </div>
       <div class="map-shell">
-        <div class="map" role="application" aria-label="Radar de Euskalmet sobre OpenStreetMap"></div>
-        <div class="map-controls" aria-label="Controles de animación">
-          <button class="previous step transport-button" type="button" aria-label="Fotograma anterior" disabled>◀</button>
-          <button class="play transport-button" type="button" aria-label="Reproducir animación" disabled>▶</button>
-          <button class="next step transport-button" type="button" aria-label="Fotograma siguiente" disabled>▶</button>
-          <span class="frame-time">Última captura disponible</span>
-          <input class="timeline" type="range" min="0" max="0" step="1" value="0" aria-label="Fotograma del radar" disabled>
-          <button class="speed" type="button" aria-label="Velocidad de reproducción">2 fps</button>
+        <div class="map" role="application" aria-label="${t.mapLabel}"></div>
+        <div class="map-controls" aria-label="${t.controls}">
+          <button class="previous step transport-button" type="button" aria-label="${t.previous}" disabled>◀</button>
+          <button class="play transport-button" type="button" aria-label="${t.play}" disabled>▶</button>
+          <button class="next step transport-button" type="button" aria-label="${t.next}" disabled>▶</button>
+          <span class="frame-time">${t.latest}</span>
+          <input class="timeline" type="range" min="0" max="0" step="1" value="0" aria-label="${t.frame}" disabled>
+          <button class="speed" type="button" aria-label="${t.speed}">2 fps</button>
         </div>
       </div>
-      <div class="legend" aria-label="Leyenda de intensidad de precipitación">
-        <span class="legend-title">PRECIPITACIONES</span>
-        <div><div class="legend-ramp"><span style="background:#7efb30"></span><span style="background:#29dd15"></span><span style="background:#00af00"></span><span style="background:#0b5d00"></span></div><span class="legend-label">Débiles</span></div>
-        <div><div class="legend-ramp"><span style="background:#08fdf9"></span><span style="background:#06a5ff"></span><span style="background:#0056ff"></span><span style="background:#000097"></span></div><span class="legend-label">Moderadas</span></div>
-        <div><div class="legend-ramp"><span style="background:#fffcad"></span><span style="background:#f6ff03"></span><span style="background:#ffa713"></span></div><span class="legend-label">Fuertes</span></div>
-        <div><div class="legend-ramp"><span style="background:#ff0000"></span><span style="background:#b90000"></span><span style="background:#7e0008"></span></div><span class="legend-label">Muy fuertes</span></div>
-        <div><div class="legend-ramp"><span style="background:#f804ed"></span><span style="background:#b000ff"></span><span style="background:#66009b"></span><span style="background:#817e7e"></span><span style="background:#020202"></span></div><span class="legend-label">Torrenciales</span></div>
+      <div class="legend" aria-label="${t.legend}">
+        <span class="legend-title">${t.precipitation}</span>
+        <div><div class="legend-ramp"><span style="background:#7efb30"></span><span style="background:#29dd15"></span><span style="background:#00af00"></span><span style="background:#0b5d00"></span></div><span class="legend-label">${t.weak}</span></div>
+        <div><div class="legend-ramp"><span style="background:#08fdf9"></span><span style="background:#06a5ff"></span><span style="background:#0056ff"></span><span style="background:#000097"></span></div><span class="legend-label">${t.moderate}</span></div>
+        <div><div class="legend-ramp"><span style="background:#fffcad"></span><span style="background:#f6ff03"></span><span style="background:#ffa713"></span></div><span class="legend-label">${t.strong}</span></div>
+        <div><div class="legend-ramp"><span style="background:#ff0000"></span><span style="background:#b90000"></span><span style="background:#7e0008"></span></div><span class="legend-label">${t.veryStrong}</span></div>
+        <div><div class="legend-ramp"><span style="background:#f804ed"></span><span style="background:#b000ff"></span><span style="background:#66009b"></span><span style="background:#817e7e"></span><span style="background:#020202"></span></div><span class="legend-label">${t.torrential}</span></div>
       </div>
       <div class="options">
         <label class="opacity-label">
-          Opacidad
-          <input class="opacity" type="range" min="0" max="1" step="0.05" aria-label="Opacidad del radar">
+          ${t.opacity}
+          <input class="opacity" type="range" min="0" max="1" step="0.05" aria-label="${t.opacity}">
         </label>
-        <button class="fit text-button" type="button">Ver cobertura</button>
-        <button class="refresh text-button" type="button">Recargar datos</button>
+        <button class="fit text-button" type="button">${t.coverage}</button>
+        <button class="refresh text-button" type="button">${t.reload}</button>
       </div>
       <div class="message" role="status"></div>
     `;
@@ -387,7 +432,7 @@ class EuskalmetRadarMapCard extends HTMLElement {
         const script = document.createElement("script");
         script.src = `${EUSKALMET_ASSET_ROOT}/leaflet/leaflet.js`;
         script.onload = () => resolve(window.L);
-        script.onerror = () => reject(new Error("No se pudo cargar Leaflet"));
+        script.onerror = () => reject(new Error(this._text().leafletError));
         document.head.appendChild(script);
       });
     }
@@ -454,11 +499,11 @@ class EuskalmetRadarMapCard extends HTMLElement {
 
     const state = this._stateObject();
     if (!state) {
-      this._showMessage(`No existe la entidad ${this._config?.entity ?? "camera"}`);
+      this._showMessage(`${this._text().entityMissing} ${this._config?.entity ?? "camera"}`);
       return;
     }
 
-    const title = this._config.title || state.attributes.friendly_name || "Radar de precipitación";
+    const title = this._config.title || state.attributes.friendly_name || this._text().title;
     this.shadowRoot.querySelector(".title").textContent = title;
 
     const key = [
@@ -476,13 +521,13 @@ class EuskalmetRadarMapCard extends HTMLElement {
   async _loadTimeline() {
     const state = this._stateObject();
     if (!state || state.state === "unavailable") {
-      this._showMessage("La imagen del radar no está disponible");
+      this._showMessage(this._text().unavailable);
       return;
     }
 
     this._stopPlayback();
     this._showMessage("");
-    this.shadowRoot.querySelector(".summary").textContent = "Cargando línea temporal…";
+    this.shadowRoot.querySelector(".summary").textContent = this._text().loadingTimeline;
 
     try {
       const response = await this._callRadarCommand({
@@ -493,7 +538,7 @@ class EuskalmetRadarMapCard extends HTMLElement {
       this._timeline = Array.isArray(response.frames) ? response.frames : [];
 
       if (!this._timeline.length) {
-        throw new Error("Todavía no hay fotogramas para animar");
+        throw new Error(this._text().noFrames);
       }
 
       const timeline = this.shadowRoot.querySelector(".timeline");
@@ -502,7 +547,7 @@ class EuskalmetRadarMapCard extends HTMLElement {
       this.shadowRoot.querySelector(".play").disabled = false;
       this.shadowRoot.querySelector(".previous").disabled = false;
       this.shadowRoot.querySelector(".next").disabled = false;
-      this.shadowRoot.querySelector(".summary").textContent = `${this._timeline.length} fotogramas · intervalo de 10 min`;
+      this.shadowRoot.querySelector(".summary").textContent = this._text().frames(this._timeline.length);
 
       await this._selectFrame(this._timeline.length - 1);
       this._preloadFrames();
@@ -511,9 +556,9 @@ class EuskalmetRadarMapCard extends HTMLElement {
       }
     } catch (error) {
       this._timeline = [];
-      this.shadowRoot.querySelector(".summary").textContent = "Última captura disponible";
+      this.shadowRoot.querySelector(".summary").textContent = this._text().latest;
       this._showLatestCameraImage();
-      this._showMessage(`Animación no disponible: ${error.message}`);
+      this._showMessage(`${this._text().animationUnavailable}: ${error.message}`);
     }
   }
 
@@ -572,7 +617,7 @@ class EuskalmetRadarMapCard extends HTMLElement {
     if (typeof this._hass?.callWS === "function") {
       return this._hass.callWS(message);
     }
-    throw new Error("WebSocket no disponible");
+    throw new Error(this._text().websocketUnavailable);
   }
 
   async _selectFrame(index) {
@@ -592,7 +637,7 @@ class EuskalmetRadarMapCard extends HTMLElement {
         this._setOverlayUrl(url);
       }
     } catch (error) {
-      this._showMessage(`No se pudo cargar el fotograma: ${error.message}`);
+      this._showMessage(`${this._text().frameError}: ${error.message}`);
       this._stopPlayback();
     }
   }
@@ -626,7 +671,7 @@ class EuskalmetRadarMapCard extends HTMLElement {
         }).format(date);
       }
     }
-    return frame?.range || "Hora no disponible";
+    return frame?.range || this._text().timeUnavailable;
   }
 
   async _togglePlayback() {
@@ -707,9 +752,9 @@ class EuskalmetRadarMapCard extends HTMLElement {
       return;
     }
     button.textContent = this._playing ? "Ⅱ" : "▶";
-    button.setAttribute("aria-label", this._playing ? "Pausar animación" : "Reproducir animación");
+    button.setAttribute("aria-label", this._playing ? this._text().pause : this._text().play);
     if (this._playing) {
-      this.shadowRoot.querySelector(".loading").textContent = "Reproduciendo";
+      this.shadowRoot.querySelector(".loading").textContent = this._text().playing;
     } else if (this._timeline.length) {
       this._updateLoadingStatus();
     }
@@ -743,8 +788,8 @@ class EuskalmetRadarMapCard extends HTMLElement {
     }
     const loaded = this._frameUrls.size;
     loading.textContent = loaded < this._timeline.length
-      ? `Preparando ${loaded}/${this._timeline.length}`
-      : "Animación lista";
+      ? `${this._text().preparing} ${loaded}/${this._timeline.length}`
+      : this._text().animationReady;
   }
 
   async _refreshData() {
@@ -761,7 +806,7 @@ class EuskalmetRadarMapCard extends HTMLElement {
       this._timelineKey = undefined;
       this._syncFromState();
     } catch (error) {
-      this._showMessage(`No se pudo actualizar el radar: ${error.message}`);
+      this._showMessage(`${this._text().updateError}: ${error.message}`);
     } finally {
       button.disabled = false;
     }
@@ -790,10 +835,15 @@ if (!customElements.get("euskalmet-radar-map-card")) {
 }
 
 window.customCards = window.customCards || [];
+const euskalmetRadarLanguage = navigator.language?.toLowerCase().startsWith("eu");
 window.customCards.push({
   type: "euskalmet-radar-map-card",
-  name: "Euskalmet: radar animado sobre OpenStreetMap",
-  description: "Anima todos los fotogramas del radar de Kapildui sobre OpenStreetMap.",
+  name: euskalmetRadarLanguage
+    ? "Euskalmet: radar animatua OpenStreetMapen"
+    : "Euskalmet: radar animado sobre OpenStreetMap",
+  description: euskalmetRadarLanguage
+    ? "Kapilduiko radar-fotograma guztiak OpenStreetMapen animatzen ditu."
+    : "Anima todos los fotogramas del radar de Kapildui sobre OpenStreetMap.",
   preview: false,
   getEntitySuggestion: (_hass, entityId) => {
     if (!entityId.startsWith("camera.")) {

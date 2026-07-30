@@ -35,6 +35,7 @@ de Euskalmet y Open Data Euskadi.
 - Caché y endpoints agregados para reducir el número de peticiones a la API.
 - Conservación del último valor válido ante respuestas temporales incompletas.
 - Recuento total y sensores dinámicos por tipo polínico.
+- Interfaz disponible en castellano y euskera según el idioma de Home Assistant.
 
 ## Vista previa
 
@@ -184,27 +185,23 @@ Copiar ID de la entrada**.
 
 ### Avisos meteorológicos
 
-Los avisos pueden mostrarse sin JavaScript adicional mediante una tarjeta de
-entidad o una tarjeta Markdown/template. Cada instalación puede asignar un ID
-distinto según su registro de entidades. Copia el ID de «Nivel de aviso» y
-sustituye `sensor.arkauti_nivel_de_aviso` en el ejemplo si fuese diferente.
+Añade este recurso JavaScript desde **Ajustes > Paneles de control > Recursos**:
 
-```yaml
-type: markdown
-title: Avisos meteorológicos
-content: >-
-  {% set entidad = 'sensor.arkauti_nivel_de_aviso' %}
-  {% set aviso = states(entidad) %}
-  {% if aviso not in ['unknown', 'unavailable', 'none', 'Sin avisos'] %}
-    **Nivel de aviso:** {{ aviso }}
-
-    {{ state_attr(entidad, 'description') | default('', true) }}
-  {% else %}
-    No hay avisos meteorológicos activos.
-  {% endif %}
+```text
+/euskalmet_static/euskalmet-alert-card.js?v=1
 ```
 
-El ID puede copiarse desde los ajustes de la propia entidad en Home Assistant.
+Después añade la tarjeta:
+
+```yaml
+type: custom:euskalmet-alert-card
+entity: sensor.arkauti_nivel_de_aviso
+```
+
+La tarjeta adapta automáticamente sus textos al castellano o al euskera y
+muestra cada riesgo activo con su descripción. Cada instalación puede asignar
+un ID distinto; copia el ID del sensor «Nivel de aviso» desde sus ajustes y
+sustituye el del ejemplo si fuese necesario.
 
 ## Actualización y tolerancia a fallos
 

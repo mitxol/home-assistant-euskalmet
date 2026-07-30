@@ -151,6 +151,7 @@ class EuskalmetAPI:
         alert_zone: str = "TRANSITION",
         pollen_municipality_id: str = "059",
         pollen_municipality_name: str = "Vitoria-Gasteiz",
+        preferred_language: str = "es",
         time_zone: str = "Europe/Madrid",
     ) -> None:
         self.session = session
@@ -165,6 +166,7 @@ class EuskalmetAPI:
         self.alert_zone = alert_zone
         self.pollen_municipality_id = pollen_municipality_id
         self.pollen_municipality_name = pollen_municipality_name
+        self.preferred_language = preferred_language
 
         try:
             self.time_zone = ZoneInfo(time_zone)
@@ -1015,6 +1017,7 @@ class EuskalmetAPI:
             "count": 0,
             "causes": [],
             "descriptions": [],
+            "descriptions_by_language": {"es": [], "eu": []},
             "alerts": [],
         }
 
@@ -1034,21 +1037,20 @@ class EuskalmetAPI:
         return f"{API_BASE.rstrip('/')}/{key}"
 
     @staticmethod
-    def _alert_description(item: dict[str, Any]) -> str:
-        """Obtener la descripción del aviso."""
+    def _alert_descriptions(item: dict[str, Any]) -> dict[str, str]:
+        """Obtener todas las descripciones traducidas del aviso."""
 
         descriptions = item.get("descriptionByLang") or {}
 
         if not isinstance(descriptions, dict):
-            return ""
+            return {}
 
-        description = (
-            descriptions.get("SPANISH")
-            or descriptions.get("BASQUE")
-            or next(iter(descriptions.values()), "")
-        )
-
-        return str(description).strip()
+        result = {}
+        for api_key, language in (("SPANISH", "es"), ("BASQUE", "eu")):
+            value = descriptions.get(api_key)
+            if value:
+                result[language] = str(value).strip()
+        return result
 
     async def get_alerts(self) -> dict[str, Any]:
         """Obtener avisos meteorológicos."""
@@ -1076,6 +1078,7 @@ class EuskalmetAPI:
         alerts = []
         causes = []
         descriptions = []
+        descriptions_by_language: dict[str, list[str]] = {"es": [], "eu": []}
 
         keys = [
             entry.get("key")
@@ -1123,13 +1126,25 @@ class EuskalmetAPI:
                     continue
 
                 cause = item.get("cause")
-                description = self._alert_description(item)
+                translated_descriptions = self._alert_descriptions(item)
+                language = (
+                    "eu"
+                    if str(self.preferred_language).lower().startswith("eu")
+                    else "es"
+                )
+                description = (
+                    translated_descriptions.get(language)
+                    or translated_descriptions.get("es")
+                    or translated_descriptions.get("eu")
+                    or ""
+                )
 
                 alerts.append(
                     {
                         "severity": severity,
                         "cause": cause,
                         "description": description,
+                        "descriptions_by_language": translated_descriptions,
                         "zone": alert.get("zoneId"),
                         "issued": alert.get("at"),
                         "valid_for": alert.get("for"),
@@ -1142,6 +1157,9 @@ class EuskalmetAPI:
 
                 if description and description not in descriptions:
                     descriptions.append(description)
+                for language, translated in translated_descriptions.items():
+                    if translated not in descriptions_by_language[language]:
+                        descriptions_by_language[language].append(translated)
 
         return {
             "active": highest
@@ -1154,6 +1172,7 @@ class EuskalmetAPI:
             "count": len(alerts),
             "causes": causes,
             "descriptions": descriptions,
+            "descriptions_by_language": descriptions_by_language,
             "alerts": alerts,
         }
 

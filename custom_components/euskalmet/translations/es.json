@@ -34,8 +34,95 @@
       "already_configured": "La integración ya está configurada."
     }
   },
+  "device": {
+    "summaries": {
+      "name": "{station_name} - Resúmenes y estadísticas"
+    },
+    "pollen_station": {
+      "name": "Polen - {municipality_name}"
+    }
+  },
   "entity": {
+    "binary_sensor": {
+      "weather_alert": {
+        "name": "Aviso meteorológico"
+      }
+    },
+    "camera": {
+      "precipitation_radar": {
+        "name": "Radar de precipitación"
+      }
+    },
     "sensor": {
+      "temperature": {
+        "name": "Temperatura"
+      },
+      "humidity": {
+        "name": "Humedad"
+      },
+      "pressure": {
+        "name": "Presión"
+      },
+      "wind_speed": {
+        "name": "Velocidad del viento"
+      },
+      "wind_gust": {
+        "name": "Racha máxima"
+      },
+      "wind_direction": {
+        "name": "Dirección del viento"
+      },
+      "irradiance": {
+        "name": "Radiación solar"
+      },
+      "precipitation": {
+        "name": "Precipitación"
+      },
+      "pollen_total": {
+        "name": "Polen total"
+      },
+      "summary_precipitation_today": {"name": "Precipitación hoy"},
+      "summary_precipitation_month": {"name": "Precipitación este mes"},
+      "summary_precipitation_year": {"name": "Precipitación este año"},
+      "summary_temperature_min_today": {"name": "Temperatura mínima hoy"},
+      "summary_temperature_mean_today": {"name": "Temperatura media hoy"},
+      "summary_temperature_max_today": {"name": "Temperatura máxima hoy"},
+      "summary_temperature_min_month": {"name": "Temperatura mínima del mes"},
+      "summary_temperature_mean_month": {"name": "Temperatura media del mes"},
+      "summary_temperature_max_month": {"name": "Temperatura máxima del mes"},
+      "summary_temperature_min_year": {"name": "Temperatura mínima del año"},
+      "summary_temperature_mean_year": {"name": "Temperatura media del año"},
+      "summary_temperature_max_year": {"name": "Temperatura máxima del año"},
+      "summary_wind_gust_max_today": {"name": "Racha máxima hoy"},
+      "summary_wind_gust_max_month": {"name": "Racha máxima del mes"},
+      "summary_wind_gust_max_year": {"name": "Racha máxima del año"},
+      "summary_humidity_min_today": {"name": "Humedad mínima hoy"},
+      "summary_humidity_mean_today": {"name": "Humedad media hoy"},
+      "summary_humidity_max_today": {"name": "Humedad máxima hoy"},
+      "summary_humidity_min_month": {"name": "Humedad mínima del mes"},
+      "summary_humidity_mean_month": {"name": "Humedad media del mes"},
+      "summary_humidity_max_month": {"name": "Humedad máxima del mes"},
+      "summary_humidity_min_year": {"name": "Humedad mínima del año"},
+      "summary_humidity_mean_year": {"name": "Humedad media del año"},
+      "summary_humidity_max_year": {"name": "Humedad máxima del año"},
+      "summary_pressure_min_today": {"name": "Presión mínima hoy"},
+      "summary_pressure_mean_today": {"name": "Presión media hoy"},
+      "summary_pressure_max_today": {"name": "Presión máxima hoy"},
+      "summary_pressure_min_month": {"name": "Presión mínima del mes"},
+      "summary_pressure_mean_month": {"name": "Presión media del mes"},
+      "summary_pressure_max_month": {"name": "Presión máxima del mes"},
+      "summary_pressure_min_year": {"name": "Presión mínima del año"},
+      "summary_pressure_mean_year": {"name": "Presión media del año"},
+      "summary_pressure_max_year": {"name": "Presión máxima del año"},
+      "summary_irradiance_mean_today": {"name": "Radiación solar media hoy"},
+      "summary_irradiance_max_today": {"name": "Radiación solar máxima hoy"},
+      "summary_irradiance_mean_month": {"name": "Radiación solar media del mes"},
+      "summary_irradiance_max_month": {"name": "Radiación solar máxima del mes"},
+      "summary_irradiance_mean_year": {"name": "Radiación solar media del año"},
+      "summary_irradiance_max_year": {"name": "Radiación solar máxima del año"},
+      "summary_wind_speed_mean_today": {"name": "Velocidad media del viento hoy"},
+      "summary_wind_speed_mean_month": {"name": "Velocidad media del viento del mes"},
+      "summary_wind_speed_mean_year": {"name": "Velocidad media del viento del año"},
       "alert_level": {
         "name": "Nivel de aviso",
         "state": {

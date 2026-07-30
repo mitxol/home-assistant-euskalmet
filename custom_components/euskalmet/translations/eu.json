@@ -1,0 +1,159 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Euskalmet konfiguratu",
+        "description": "Sartu sarbide-datuak. Hurrengo urratsean estazio meteorologiko bat aukeratu eta eskaintzen dituen magnitudeak ikusi ahal izango dituzu.",
+        "data": {
+          "email": "Helbide elektronikoa",
+          "private_key": "Gako pribatua"
+        }
+      },
+      "station": {
+        "title": "Estazio meteorologikoa aukeratu",
+        "description": "{station_count} estazio meteorologiko aktibo aurkitu dira. Aukera bakoitzak zenbat magnitude eskaintzen dituen eta zein falta diren adierazten du. Mareografoak eta datu meteorologikorik gabeko estazioak ez dira agertzen.",
+        "data": {
+          "station_id": "Estazioa"
+        }
+      },
+      "confirm": {
+        "title": "Osatu gabeko estazioa berretsi",
+        "description": "**{station}** estazioak hauek eskaintzen ditu: {available}.\n\nEz ditu hauek eskaintzen: **{missing}**.\n\nEskuragarri dauden magnitudeetarako sentsoreak baino ez dira sortuko. Sakatu Bidali hala ere gehitzeko.",
+        "data": {}
+      }
+    },
+    "error": {
+      "invalid_auth": "Euskalmeteko egiaztagiriak ez dira baliozkoak.",
+      "cannot_connect": "Ezin izan da Euskalmetekin konektatu. Saiatu berriro.",
+      "cannot_determine_location": "Ezin izan da aukeratutako estazioa Euskalmeteko iragarpen-kokaleku batekin lotu.",
+      "cannot_load_stations": "Ezin izan da estazioen katalogo ofiziala kargatu.",
+      "no_compatible_stations": "Ez da magnitude bateragarriren bat argitaratzen duen estazio meteorologikorik aurkitu.",
+      "station_not_available": "Aukeratutako estazioa jada ez dago eskuragarri. Ireki berriro konfigurazioa."
+    },
+    "abort": {
+      "already_configured": "Integrazioa dagoeneko konfiguratuta dago."
+    }
+  },
+  "device": {
+    "summaries": {
+      "name": "{station_name} - Laburpenak eta estatistikak"
+    },
+    "pollen_station": {
+      "name": "Polena - {municipality_name}"
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "weather_alert": {
+        "name": "Abisu meteorologikoa"
+      }
+    },
+    "camera": {
+      "precipitation_radar": {
+        "name": "Prezipitazio-radarra"
+      }
+    },
+    "sensor": {
+      "temperature": {
+        "name": "Tenperatura"
+      },
+      "humidity": {
+        "name": "Hezetasuna"
+      },
+      "pressure": {
+        "name": "Presioa"
+      },
+      "wind_speed": {
+        "name": "Haizearen abiadura"
+      },
+      "wind_gust": {
+        "name": "Haize-bolada handiena"
+      },
+      "wind_direction": {
+        "name": "Haizearen norabidea"
+      },
+      "irradiance": {
+        "name": "Eguzki-erradiazioa"
+      },
+      "precipitation": {
+        "name": "Prezipitazioa"
+      },
+      "pollen_total": {
+        "name": "Polen kopuru osoa"
+      },
+      "summary_precipitation_today": {"name": "Gaurko prezipitazioa"},
+      "summary_precipitation_month": {"name": "Hilabete honetako prezipitazioa"},
+      "summary_precipitation_year": {"name": "Aurtengo prezipitazioa"},
+      "summary_temperature_min_today": {"name": "Gaurko tenperatura minimoa"},
+      "summary_temperature_mean_today": {"name": "Gaurko batez besteko tenperatura"},
+      "summary_temperature_max_today": {"name": "Gaurko tenperatura maximoa"},
+      "summary_temperature_min_month": {"name": "Hilabeteko tenperatura minimoa"},
+      "summary_temperature_mean_month": {"name": "Hilabeteko batez besteko tenperatura"},
+      "summary_temperature_max_month": {"name": "Hilabeteko tenperatura maximoa"},
+      "summary_temperature_min_year": {"name": "Urteko tenperatura minimoa"},
+      "summary_temperature_mean_year": {"name": "Urteko batez besteko tenperatura"},
+      "summary_temperature_max_year": {"name": "Urteko tenperatura maximoa"},
+      "summary_wind_gust_max_today": {"name": "Gaurko haize-bolada handiena"},
+      "summary_wind_gust_max_month": {"name": "Hilabeteko haize-bolada handiena"},
+      "summary_wind_gust_max_year": {"name": "Urteko haize-bolada handiena"},
+      "summary_humidity_min_today": {"name": "Gaurko hezetasun minimoa"},
+      "summary_humidity_mean_today": {"name": "Gaurko batez besteko hezetasuna"},
+      "summary_humidity_max_today": {"name": "Gaurko hezetasun maximoa"},
+      "summary_humidity_min_month": {"name": "Hilabeteko hezetasun minimoa"},
+      "summary_humidity_mean_month": {"name": "Hilabeteko batez besteko hezetasuna"},
+      "summary_humidity_max_month": {"name": "Hilabeteko hezetasun maximoa"},
+      "summary_humidity_min_year": {"name": "Urteko hezetasun minimoa"},
+      "summary_humidity_mean_year": {"name": "Urteko batez besteko hezetasuna"},
+      "summary_humidity_max_year": {"name": "Urteko hezetasun maximoa"},
+      "summary_pressure_min_today": {"name": "Gaurko presio minimoa"},
+      "summary_pressure_mean_today": {"name": "Gaurko batez besteko presioa"},
+      "summary_pressure_max_today": {"name": "Gaurko presio maximoa"},
+      "summary_pressure_min_month": {"name": "Hilabeteko presio minimoa"},
+      "summary_pressure_mean_month": {"name": "Hilabeteko batez besteko presioa"},
+      "summary_pressure_max_month": {"name": "Hilabeteko presio maximoa"},
+      "summary_pressure_min_year": {"name": "Urteko presio minimoa"},
+      "summary_pressure_mean_year": {"name": "Urteko batez besteko presioa"},
+      "summary_pressure_max_year": {"name": "Urteko presio maximoa"},
+      "summary_irradiance_mean_today": {"name": "Gaurko batez besteko eguzki-erradiazioa"},
+      "summary_irradiance_max_today": {"name": "Gaurko eguzki-erradiazio maximoa"},
+      "summary_irradiance_mean_month": {"name": "Hilabeteko batez besteko eguzki-erradiazioa"},
+      "summary_irradiance_max_month": {"name": "Hilabeteko eguzki-erradiazio maximoa"},
+      "summary_irradiance_mean_year": {"name": "Urteko batez besteko eguzki-erradiazioa"},
+      "summary_irradiance_max_year": {"name": "Urteko eguzki-erradiazio maximoa"},
+      "summary_wind_speed_mean_today": {"name": "Gaurko batez besteko haize-abiadura"},
+      "summary_wind_speed_mean_month": {"name": "Hilabeteko batez besteko haize-abiadura"},
+      "summary_wind_speed_mean_year": {"name": "Urteko batez besteko haize-abiadura"},
+      "alert_level": {
+        "name": "Abisu-maila",
+        "state": {
+          "none": "Abisurik ez",
+          "yellow": "Horia",
+          "orange": "Laranja",
+          "red": "Gorria"
+        }
+      }
+    },
+    "weather": {
+      "weather": {
+        "name": "Eguraldia",
+        "state": {
+          "clear-night": "Gau oskarbia",
+          "cloudy": "Hodeitsua",
+          "exceptional": "Ezohikoa",
+          "fog": "Lainoa",
+          "hail": "Txingorra",
+          "lightning": "Ekaitza",
+          "lightning-rainy": "Ekaitza euriarekin",
+          "partlycloudy": "Hodei tarteak",
+          "pouring": "Euri-jasa",
+          "rainy": "Euria",
+          "snowy": "Elurra",
+          "snowy-rainy": "Elur bustia",
+          "sunny": "Eguzkitsua",
+          "windy": "Haizetsua",
+          "windy-variant": "Haizetsua eta hodeitsua"
+        }
+      }
+    }
+  }
+}

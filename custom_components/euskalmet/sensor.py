@@ -134,6 +134,10 @@ ANNUAL_SUMMARY_SENSORS = tuple(
     if section == "summary_month"
 )
 
+EU_POLLEN_NAMES = {
+    "no_identificados": "Identifikatu gabeak",
+    "compositae_otras_": "Beste konposatu batzuk",
+}
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -198,7 +202,14 @@ async def async_setup_entry(
             EuskalmetPollenSpeciesSensor(
                 coordinator,
                 specie_id,
-                str(species[specie_id].get("name") or specie_id),
+                (
+                    EU_POLLEN_NAMES.get(
+                        specie_id,
+                        str(species[specie_id].get("name") or specie_id),
+                    )
+                    if str(hass.config.language).lower().startswith("eu")
+                    else str(species[specie_id].get("name") or specie_id)
+                ),
             )
             for specie_id in sorted(new_species)
             if isinstance(species[specie_id], dict)
@@ -242,7 +253,7 @@ class EuskalmetPollenSensor(CoordinatorEntity, SensorEntity):
 class EuskalmetPollenTotalSensor(EuskalmetPollenSensor):
     """Total pollen/spore count in the newest published sample."""
 
-    _attr_name = "Polen total"
+    _attr_translation_key = "pollen_total"
 
     def __init__(self, coordinator: EuskalmetCoordinator) -> None:
         super().__init__(coordinator)
@@ -294,13 +305,14 @@ class EuskalmetSummarySensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         (
             self.key,
-            self._attr_name,
+            _default_name,
             self.section,
             self.measure,
             self.field,
             self._attr_native_unit_of_measurement,
             self._attr_icon,
         ) = config
+        self._attr_translation_key = f"summary_{self.key}"
         self._attr_unique_id = f"{coordinator.api.station_id}_{self.key}"
         if self.measure == "temperature":
             self._attr_device_class = SensorDeviceClass.TEMPERATURE
@@ -454,7 +466,7 @@ class EuskalmetSensor(
         self.key = key
         self.cfg = MEASURES[key]
 
-        self._attr_name = self.cfg["name"]
+        self._attr_translation_key = key
         self._attr_unique_id = f"{coordinator.api.station_id}_{key}"
 
         self._attr_icon = self.cfg["icon"]
@@ -542,7 +554,6 @@ class EuskalmetAlertLevelSensor(
     """Nivel máximo de aviso meteorológico."""
 
     _attr_has_entity_name = True
-    _attr_name = "Nivel de aviso"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = ["none", "yellow", "orange", "red"]
     _attr_translation_key = "alert_level"

@@ -26,7 +26,8 @@ def summary_device_info(station_id: str, station_name: str) -> DeviceInfo:
         identifiers={(DOMAIN, f"{station_id}_summaries")},
         manufacturer=MANUFACTURER,
         model="Resúmenes meteorológicos",
-        name=f"{station_name} - Resúmenes y estadísticas",
+        translation_key="summaries",
+        translation_placeholders={"station_name": station_name},
         sw_version="OpenData API",
         via_device=(DOMAIN, station_id),
     )
@@ -43,7 +44,8 @@ def pollen_device_info(
         identifiers={(DOMAIN, f"pollen_{station_id}_{municipality_id}")},
         manufacturer="Gobierno Vasco - Departamento de Salud",
         model="Estación de polen",
-        name=f"Polen - {municipality_name}",
+        translation_key="pollen_station",
+        translation_placeholders={"municipality_name": municipality_name},
         sw_version="Open Data Euskadi API",
         via_device=(DOMAIN, station_id),
     )

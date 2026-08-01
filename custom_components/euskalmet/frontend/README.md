@@ -34,7 +34,7 @@ automáticamente una entrada porque los fotogramas son comunes a todas ellas.
 Recurso:
 
 ```text
-/euskalmet_static/euskalmet-history-card.js?v=2
+/euskalmet_static/euskalmet-history-card.js?v=4
 ```
 
 Tarjeta:
@@ -45,8 +45,11 @@ entity: sensor.arkauti_temperatura
 measure: temperature
 ```
 
-Los datos se consultan bajo demanda y no se importan al Recorder. Cuando hay
-varias entradas se recomienda indicar explícitamente la correspondiente:
+Los datos se consultan bajo demanda y no se importan al Recorder. La tarjeta
+incluye selección directa de mes, información diaria, escalas adaptativas y
+una leyenda que permite mostrar u ocultar series. La precipitación se
+representa mediante barras y el resto de magnitudes mediante líneas. Cuando
+hay varias entradas se recomienda indicar explícitamente la correspondiente:
 
 ```yaml
 type: custom:euskalmet-history-card

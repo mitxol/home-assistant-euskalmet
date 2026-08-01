@@ -10,15 +10,22 @@ de Euskalmet y Open Data Euskadi.
 > canales de soporte de Euskalmet.
 
 > [!NOTE]
+> **Desarrollo asistido por inteligencia artificial.** Este proyecto se ha
+> creado y revisado con una ayuda significativa de herramientas de IA. El
+> mantenimiento, las decisiones funcionales y las pruebas corresponden al
+> responsable del repositorio. Si encuentras un error, puedes comunicarlo
+> mediante un Issue para que pueda revisarse.
+
+> [!NOTE]
 > El radar animado utiliza una adaptación de la tarjeta de HACS
 > [Weather Radar Card](https://github.com/jpettitt/weather-radar-card), creada
 > por su comunidad y publicada bajo licencia MIT. La adaptación añade Euskalmet
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Estado: **versión estable**. La versión actual es `2.10.0`.
-> Añade mediciones de polen de la estación oficial más cercana mediante la API
-> pública de Open Data Euskadi.
+> Estado: **versión estable**. La versión actual es `2.12.0`.
+> Incluye traducción en castellano y euskera, mediciones de polen, una nueva
+> visualización interactiva de los históricos mensuales y predicción marítima.
 
 ## Funciones
 
@@ -35,18 +42,29 @@ de Euskalmet y Open Data Euskadi.
 - Caché y endpoints agregados para reducir el número de peticiones a la API.
 - Conservación del último valor válido ante respuestas temporales incompletas.
 - Recuento total y sensores dinámicos por tipo polínico.
+- Calendario astronómico oficial con Sol, Luna y mareas de Pasaia.
+- Previsión marítima del Cantábrico con oleaje, temperatura y visibilidad.
 - Interfaz disponible en castellano y euskera según el idioma de Home Assistant.
 
 ## Vista previa
 
-![Panel de Euskalmet con radar, históricos, avisos y observaciones](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/panel-euskalmet.png)
+| Mar, estadísticas y polen | Radar, histórico y observaciones |
+| --- | --- |
+| ![Dispositivos marítimo, estadístico y de polen de Euskalmet en euskera](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/mar-estadisticas-polen-eu.png) | ![Panel de Euskalmet en euskera con radar, histórico, avisos y observaciones](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/radar-historico-observaciones-eu.png) |
 
 La entidad meteorológica ofrece previsión diaria y horaria desde el diálogo
-nativo de Home Assistant:
+nativo de Home Assistant. La interfaz adapta automáticamente los textos al
+idioma general de la instalación:
 
 | Previsión diaria | Previsión horaria |
 | --- | --- |
-| ![Previsión diaria de Euskalmet](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/prevision-diaria.png) | ![Previsión horaria de Euskalmet](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/prevision-horaria.png) |
+| ![Previsión diaria de Euskalmet en euskera](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/prevision-diaria.png) | ![Previsión horaria de Euskalmet en euskera](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/prevision-horaria.png) |
+
+Los resúmenes diarios, mensuales y anuales se agrupan en un dispositivo
+estadístico independiente. El polen se muestra en otro dispositivo con la
+captadora oficial más próxima a la estación meteorológica:
+
+![Resúmenes, estadísticas y polen de Euskalmet en euskera](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/resumenes-polen-eu.png)
 
 ## Requisitos
 
@@ -96,15 +114,80 @@ El asistente solicita las credenciales. Hay que introducir email y privatekey.pe
 después muestra las estaciones meteorológicas activas  con los sensores que 
 tiene disponibles (no todas las estaciones tienen todos los sensores). 
 Cada estación se configura como una entrada independiente. 
-La integración crea un dispositivo para las observaciones actuales, otro para
-resúmenes y estadísticas y otro para el polen. La captadora de Bilbao,
-Vitoria-Gasteiz o Donostia / San Sebastián se elige automáticamente por
-proximidad a la estación meteorológica.
+La integración crea dispositivos separados para las observaciones actuales,
+resúmenes y estadísticas, polen y previsión marítima. El dispositivo marítimo
+agrupa también el calendario solar y lunar y las mareas astronómicas de Pasaia.
+La captadora de Bilbao, Vitoria-Gasteiz o Donostia / San Sebastián se elige
+automáticamente por proximidad a la estación meteorológica.
 
 Solo se crean entidades para las magnitudes publicadas por la estación.
 Los tipos polínicos aparecen como entidades cuando la API los publica. Los
 datos proceden del Departamento de Salud, tienen periodicidad semanal y
 exponen la fecha efectiva de la muestra en el atributo `observed_on`.
+
+### Calendario astronómico
+
+El dispositivo marítimo consulta una vez al día el calendario oficial de
+Euskalmet y publica:
+
+- Salida de la Luna.
+- Puesta de la Luna.
+- Fase lunar.
+
+También crea las entidades de salida y puesta del Sol, pero quedan desactivadas
+por defecto porque Home Assistant ya calcula esos horarios para las coordenadas
+exactas de la vivienda. Pueden activarse desde la página del dispositivo.
+
+Astro es una fuente opcional: si el endpoint falla temporalmente, la integración
+conserva el último calendario válido y continúa actualizando observaciones,
+previsión, avisos, radar, resúmenes y polen.
+
+### Previsión marítima
+
+El dispositivo **Euskalmet - Mar Cantábrico** consulta el endpoint oficial
+Ocean Forecast y publica:
+
+- Fecha y textos bilingües de la previsión marítima.
+- Altura prevista de las olas.
+- Temperatura del agua.
+- Visibilidad mínima y máxima.
+
+Es una previsión general de la costa vasca y no una medición de la estación
+meteorológica seleccionada. Se actualiza cada dos horas, conserva el último
+pronóstico válido y no interrumpe las demás fuentes si el servicio no está
+disponible.
+
+La visibilidad se publica en kilómetros. La API de producción etiqueta
+actualmente el intervalo como metros, pero la página marítima oficial confirma
+que valores como `4–10` corresponden a kilómetros.
+
+El mismo dispositivo añade las mareas astronómicas de referencia de Pasaia:
+
+- Estado de la marea: subiendo o bajando.
+- Próxima pleamar y su altura.
+- Próxima bajamar y su altura.
+
+Se descargan hoy y mañana cada seis horas. La integración interpreta los campos
+de producción `phase`, `time` y `high` y conserva también la respuesta original
+en el atributo `raw_tides` para diagnóstico.
+
+### Frecuencias de actualización
+
+La integración conserva una caché independiente para cada fuente y evita
+consultar con la misma frecuencia datos que cambian lentamente:
+
+- Mediciones actuales y radar: cada 5 minutos.
+- Resumen del día y avisos meteorológicos: cada 15 minutos.
+- Predicción horaria y resumen mensual: cada hora.
+- Predicción diaria: cada 2 horas.
+- Previsión marítima: cada 2 horas.
+- Mareas de Pasaia: cada 6 horas.
+- Polen: cada 6 horas.
+- Calendario astronómico: una vez al día.
+
+Si una fuente opcional falla se conserva su último valor válido y el siguiente
+intento respeta el intervalo correspondiente. Las observaciones actuales siguen
+siendo la única fuente imprescindible para considerar correcta una actualización.
 
 ## Tarjetas
 
@@ -113,18 +196,20 @@ recursos que vayas a utilizar en **Ajustes > Paneles de control > menú de tres
 puntos > Recursos**, con tipo **Módulo JavaScript**:
 
 ```text
-/euskalmet_static/euskalmet-history-card.js?v=2
+/euskalmet_static/euskalmet-history-card.js?v=4
 /euskalmet_static/weather-radar-card-euskalmet.js?v=3
+/euskalmet_static/euskalmet-alert-card.js?v=1
 ```
 
 La adaptación registra `custom:weather-radar-card-euskalmet`, por lo que puede
 coexistir con la tarjeta original `custom:weather-radar-card` si también la
 utilizas con otras fuentes.
 
-Las revisiones `v=2` y `v=3` pertenecen a cada archivo JavaScript, no a la
-versión de la integración. No hay que modificarlas en cada actualización:
-solamente cambiarán cuando se publique una revisión real de la tarjeta. Después
-de ese cambio, cierra y vuelve a abrir la aplicación móvil o fuerza una recarga
+Las revisiones de la URL pertenecen a cada archivo JavaScript, no a la versión
+de la integración. No hay que modificarlas en cada actualización: solamente
+cambiarán cuando se publique una revisión real de la tarjeta. Debe existir una
+sola URL por tarjeta; elimina la revisión anterior al actualizarla. Después del
+cambio, cierra y vuelve a abrir la aplicación móvil o fuerza una recarga
 completa del navegador.
 
 ### Radar animado
@@ -167,7 +252,11 @@ measure: temperature
 
 La tarjeta consulta los resúmenes de Euskalmet al visualizar el periodo. Los
 datos históricos no se copian al Recorder ni se mezclan con las estadísticas
-de larga duración de Home Assistant.
+de larga duración de Home Assistant. El selector de mes permite abrir
+directamente cualquier periodo sin recorrer los meses uno a uno. El gráfico
+ofrece información detallada por día, escalas adaptativas y una leyenda
+interactiva; la precipitación se muestra mediante barras y el resto de
+magnitudes mediante líneas.
 
 Con una sola entrada no hace falta indicar nada más. Cuando hay varias
 estaciones, se recomienda seleccionar explícitamente la entrada para obtener un

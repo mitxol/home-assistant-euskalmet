@@ -49,3 +49,30 @@ def pollen_device_info(
         sw_version="Open Data Euskadi API",
         via_device=(DOMAIN, station_id),
     )
+
+
+def astronomy_device_info(station_id: str, station_name: str) -> DeviceInfo:
+    """Build the separate device for Euskalmet astronomical information."""
+
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"{station_id}_astronomy")},
+        manufacturer=MANUFACTURER,
+        model="Calendario astronómico",
+        translation_key="astronomy",
+        translation_placeholders={"station_name": station_name},
+        sw_version="OpenData API",
+        via_device=(DOMAIN, station_id),
+    )
+
+
+def ocean_device_info(station_id: str) -> DeviceInfo:
+    """Build the separate device for Euskalmet ocean information."""
+
+    return DeviceInfo(
+        identifiers={(DOMAIN, f"{station_id}_ocean")},
+        manufacturer=MANUFACTURER,
+        model="Previsión marítima",
+        translation_key="ocean",
+        sw_version="OpenData API",
+        via_device=(DOMAIN, station_id),
+    )

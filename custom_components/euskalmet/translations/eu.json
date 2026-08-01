@@ -40,6 +40,12 @@
     },
     "pollen_station": {
       "name": "Polena - {municipality_name}"
+    },
+    "astronomy": {
+      "name": "{station_name} - Astronomia"
+    },
+    "ocean": {
+      "name": "Euskalmet - Kantauri itsasoa"
     }
   },
   "entity": {
@@ -80,6 +86,65 @@
       },
       "pollen_total": {
         "name": "Polen kopuru osoa"
+      },
+      "ocean_forecast": {
+        "name": "Itsas iragarpena"
+      },
+      "ocean_wave_height": {
+        "name": "Olatuen altuera"
+      },
+      "ocean_water_temperature": {
+        "name": "Uraren tenperatura"
+      },
+      "ocean_visibility_min": {
+        "name": "Gutxieneko ikuspena"
+      },
+      "ocean_visibility_max": {
+        "name": "Gehieneko ikuspena"
+      },
+      "ocean_tide_state": {
+        "name": "Marearen egoera",
+        "state": {
+          "rising": "Gorantz",
+          "falling": "Beherantz"
+        }
+      },
+      "ocean_tide_high": {
+        "name": "Hurrengo itsasgora"
+      },
+      "ocean_tide_high_height": {
+        "name": "Hurrengo itsasgoraren altuera"
+      },
+      "ocean_tide_low": {
+        "name": "Hurrengo itsasbehera"
+      },
+      "ocean_tide_low_height": {
+        "name": "Hurrengo itsasbeheraren altuera"
+      },
+      "astro_moonrise": {
+        "name": "Ilargiaren irteera"
+      },
+      "astro_moonset": {
+        "name": "Ilargiaren sarrera"
+      },
+      "astro_sunrise": {
+        "name": "Eguzkiaren irteera"
+      },
+      "astro_sunset": {
+        "name": "Eguzkiaren sarrera"
+      },
+      "astro_moon_phase": {
+        "name": "Ilargiaren fasea",
+        "state": {
+          "new_moon": "Ilberria",
+          "waxing_crescent": "Ilgora",
+          "first_quarter": "Lehen laurdena",
+          "waxing_gibbous": "Ilgora konkorduna",
+          "full_moon": "Ilbetea",
+          "waning_gibbous": "Ilbehera konkorduna",
+          "last_quarter": "Azken laurdena",
+          "waning_crescent": "Ilbehera"
+        }
       },
       "summary_precipitation_today": {"name": "Gaurko prezipitazioa"},
       "summary_precipitation_month": {"name": "Hilabete honetako prezipitazioa"},

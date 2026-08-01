@@ -40,6 +40,12 @@
     },
     "pollen_station": {
       "name": "Polen - {municipality_name}"
+    },
+    "astronomy": {
+      "name": "{station_name} - Astronomía"
+    },
+    "ocean": {
+      "name": "Euskalmet - Mar Cantábrico"
     }
   },
   "entity": {
@@ -80,6 +86,65 @@
       },
       "pollen_total": {
         "name": "Polen total"
+      },
+      "ocean_forecast": {
+        "name": "Previsión marítima"
+      },
+      "ocean_wave_height": {
+        "name": "Altura de ola"
+      },
+      "ocean_water_temperature": {
+        "name": "Temperatura del agua"
+      },
+      "ocean_visibility_min": {
+        "name": "Visibilidad mínima"
+      },
+      "ocean_visibility_max": {
+        "name": "Visibilidad máxima"
+      },
+      "ocean_tide_state": {
+        "name": "Estado de la marea",
+        "state": {
+          "rising": "Subiendo",
+          "falling": "Bajando"
+        }
+      },
+      "ocean_tide_high": {
+        "name": "Próxima pleamar"
+      },
+      "ocean_tide_high_height": {
+        "name": "Altura de la próxima pleamar"
+      },
+      "ocean_tide_low": {
+        "name": "Próxima bajamar"
+      },
+      "ocean_tide_low_height": {
+        "name": "Altura de la próxima bajamar"
+      },
+      "astro_moonrise": {
+        "name": "Salida de la Luna"
+      },
+      "astro_moonset": {
+        "name": "Puesta de la Luna"
+      },
+      "astro_sunrise": {
+        "name": "Salida del Sol"
+      },
+      "astro_sunset": {
+        "name": "Puesta del Sol"
+      },
+      "astro_moon_phase": {
+        "name": "Fase lunar",
+        "state": {
+          "new_moon": "Luna nueva",
+          "waxing_crescent": "Luna creciente",
+          "first_quarter": "Cuarto creciente",
+          "waxing_gibbous": "Gibosa creciente",
+          "full_moon": "Luna llena",
+          "waning_gibbous": "Gibosa menguante",
+          "last_quarter": "Cuarto menguante",
+          "waning_crescent": "Luna menguante"
+        }
       },
       "summary_precipitation_today": {"name": "Precipitación hoy"},
       "summary_precipitation_month": {"name": "Precipitación este mes"},

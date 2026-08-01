@@ -5,7 +5,7 @@ import base64
 import logging
 import time
 from contextlib import suppress
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 from urllib.parse import quote
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import aiohttp
 import jwt
 
+from .astro import parse_astro_calendar
 from .const import (
     API_BASE,
     DEFAULT_STATION,
@@ -32,6 +33,7 @@ from .geography import (
     nearest_station,
     station_by_id,
 )
+from .ocean import parse_ocean_forecast
 from .pollen import parse_pollen_measurements
 from .readings import (
     available_aggregated_measure_keys,
@@ -42,6 +44,7 @@ from .readings import (
     summarize_aggregated_day,
     summarize_public_day,
 )
+from .tides import parse_tide_report
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1357,6 +1360,91 @@ class EuskalmetAPI:
             raise request_errors[-1]
 
         return self._empty_radar()
+
+    async def get_astro_calendar(
+        self,
+        target: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Obtener y normalizar el calendario solar y lunar de una fecha."""
+
+        calendar_datetime = target or datetime.now(self.time_zone)
+        if calendar_datetime.tzinfo is None:
+            calendar_datetime = calendar_datetime.replace(tzinfo=self.time_zone)
+        calendar_date = calendar_datetime.astimezone(self.time_zone).date()
+        url = (
+            f"{API_BASE}/astro/calendar/for/"
+            f"{calendar_date:%Y/%m/%d}"
+        )
+        document = await self._request(url)
+        return parse_astro_calendar(document, calendar_date, self.time_zone)
+
+    async def get_ocean_forecast(
+        self,
+        target: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Obtener y normalizar la previsión marítima del Cantábrico."""
+
+        forecast_datetime = target or datetime.now(self.time_zone)
+        if forecast_datetime.tzinfo is None:
+            forecast_datetime = forecast_datetime.replace(tzinfo=self.time_zone)
+        forecast_date = forecast_datetime.astimezone(self.time_zone).date()
+        url = (
+            f"{API_BASE}/ocean/forecast/at/{forecast_date:%Y/%m/%d}/"
+            f"for/{forecast_date:%Y%m%d}"
+        )
+        document = await self._request(url)
+        return parse_ocean_forecast(document, self.time_zone)
+
+    async def get_tides(
+        self,
+        target: datetime | None = None,
+    ) -> dict[str, Any]:
+        """Obtener las mareas astronómicas de Pasaia para hoy y mañana."""
+
+        local_target = target or datetime.now(self.time_zone)
+        if local_target.tzinfo is None:
+            local_target = local_target.replace(tzinfo=self.time_zone)
+        first_date = local_target.astimezone(self.time_zone).date()
+        dates = (first_date, first_date + timedelta(days=1))
+
+        async def load(target_date: date) -> dict[str, Any]:
+            url = (
+                f"{API_BASE}/astro/tides/regions/basque_country/"
+                f"zones/donostialdea/locations/pasaia/reports/for/"
+                f"{target_date:%Y/%m/%d}"
+            )
+            document = await self._request(url)
+            return parse_tide_report(document, target_date, self.time_zone)
+
+        results = await asyncio.gather(
+            *(load(target_date) for target_date in dates),
+            return_exceptions=True,
+        )
+        reports = [result for result in results if isinstance(result, dict)]
+        if not reports:
+            errors = [result for result in results if isinstance(result, Exception)]
+            if errors:
+                raise errors[-1]
+            return {}
+
+        events = [
+            event
+            for report in reports
+            for event in report.get("events", [])
+            if isinstance(event, dict) and isinstance(event.get("time"), datetime)
+        ]
+        events.sort(key=lambda event: event["time"])
+        return {
+            "date": reports[0].get("date"),
+            "location": "Pasaia",
+            "events": events,
+            "raw_tides": [
+                item
+                for report in reports
+                for item in report.get("raw_tides", [])
+            ],
+            "source": "euskalmet_astro_tides",
+        }
 
     async def get_pollen_measurements(self) -> dict[str, Any]:
         """Obtener la medición de polen más reciente de la estación cercana."""

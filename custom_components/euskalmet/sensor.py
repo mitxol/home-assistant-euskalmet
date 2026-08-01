@@ -1,19 +1,26 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, MEASURES
 from .coordinator import EuskalmetCoordinator
-from .entity import device_info, pollen_device_info, summary_device_info
+from .entity import (
+    device_info,
+    ocean_device_info,
+    pollen_device_info,
+    summary_device_info,
+)
 from .formatting import degrees_to_compass
+from .tides import next_tide_event
 
 PARALLEL_UPDATES = 0
 
@@ -139,6 +146,17 @@ EU_POLLEN_NAMES = {
     "compositae_otras_": "Beste konposatu batzuk",
 }
 
+MOON_PHASE_OPTIONS = [
+    "new_moon",
+    "waxing_crescent",
+    "first_quarter",
+    "waxing_gibbous",
+    "full_moon",
+    "waning_gibbous",
+    "last_quarter",
+    "waning_crescent",
+]
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -162,6 +180,28 @@ async def async_setup_entry(
     # Eliminar del registro sensores que versiones anteriores crearon para
     # magnitudes que esta estación no publica.
     registry = er.async_get(hass)
+    device_registry = dr.async_get(hass)
+    obsolete_astronomy_device = device_registry.async_get_device(
+        identifiers={(DOMAIN, f"{coordinator.api.station_id}_astronomy")}
+    )
+    if obsolete_astronomy_device is not None:
+        device_registry.async_remove_device(obsolete_astronomy_device.id)
+
+    # Beta 7 registered visibility as a distance without a preferred unit,
+    # allowing metric installations to convert the documented kilometres to
+    # metres. Migrate those two existing registry entries back to kilometres.
+    for boundary in ("min", "max"):
+        visibility_entity_id = registry.async_get_entity_id(
+            "sensor",
+            DOMAIN,
+            f"{coordinator.api.station_id}_ocean_visibility_{boundary}",
+        )
+        if visibility_entity_id is not None:
+            registry.async_update_entity(
+                visibility_entity_id,
+                unit_of_measurement="km",
+            )
+
     for key in MEASURES.keys() - supported:
         entity_id = registry.async_get_entity_id(
             "sensor",
@@ -172,6 +212,47 @@ async def async_setup_entry(
             registry.async_remove(entity_id)
 
     entities.append(EuskalmetAlertLevelSensor(coordinator))
+    entities.extend(
+        (
+            EuskalmetAstroTimeSensor(
+                coordinator,
+                "moonrise",
+                "mdi:moon-waxing-crescent",
+            ),
+            EuskalmetAstroTimeSensor(
+                coordinator,
+                "moonset",
+                "mdi:moon-waning-crescent",
+            ),
+            EuskalmetMoonPhaseSensor(coordinator),
+            EuskalmetAstroTimeSensor(
+                coordinator,
+                "sunrise",
+                "mdi:weather-sunset-up",
+                enabled_default=False,
+            ),
+            EuskalmetAstroTimeSensor(
+                coordinator,
+                "sunset",
+                "mdi:weather-sunset-down",
+                enabled_default=False,
+            ),
+        )
+    )
+    entities.extend(
+        (
+            EuskalmetOceanForecastSensor(coordinator),
+            EuskalmetWaveHeightSensor(coordinator),
+            EuskalmetWaterTemperatureSensor(coordinator),
+            EuskalmetVisibilitySensor(coordinator, "min"),
+            EuskalmetVisibilitySensor(coordinator, "max"),
+            EuskalmetTideStateSensor(coordinator),
+            EuskalmetTideTimeSensor(coordinator, "high"),
+            EuskalmetTideHeightSensor(coordinator, "high"),
+            EuskalmetTideTimeSensor(coordinator, "low"),
+            EuskalmetTideHeightSensor(coordinator, "low"),
+        )
+    )
     entities.extend(
         EuskalmetSummarySensor(coordinator, config)
         for config in SUMMARY_SENSORS
@@ -221,6 +302,364 @@ async def async_setup_entry(
     async_add_entities(entities)
     add_pollen_entities()
     entry.async_on_unload(coordinator.async_add_listener(add_pollen_entities))
+
+
+class EuskalmetAstroSensor(CoordinatorEntity, SensorEntity):
+    """Base for the official Euskalmet astronomical calendar."""
+
+    _attr_has_entity_name = True
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return ocean_device_info(self.coordinator.api.station_id)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        astro = (self.coordinator.data or {}).get("astro", {})
+        return {
+            "calendar_date": astro.get("date"),
+            "source": astro.get("source", "euskalmet_astro_calendar"),
+        }
+
+
+class EuskalmetAstroTimeSensor(EuskalmetAstroSensor):
+    """Timestamp for a sun or moon event."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+
+    def __init__(
+        self,
+        coordinator: EuskalmetCoordinator,
+        key: str,
+        icon: str,
+        *,
+        enabled_default: bool = True,
+    ) -> None:
+        super().__init__(coordinator)
+        self.key = key
+        self._attr_translation_key = f"astro_{key}"
+        self._attr_unique_id = (
+            f"{coordinator.api.station_id}_astro_{key}"
+        )
+        self._attr_icon = icon
+        self._attr_entity_registry_enabled_default = enabled_default
+
+    @property
+    def native_value(self) -> Any:
+        return (self.coordinator.data or {}).get("astro", {}).get(self.key)
+
+
+class EuskalmetMoonPhaseSensor(EuskalmetAstroSensor):
+    """Official lunar phase reported by Euskalmet."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = MOON_PHASE_OPTIONS
+    _attr_translation_key = "astro_moon_phase"
+    _attr_icon = "mdi:moon-waning-crescent"
+
+    def __init__(self, coordinator: EuskalmetCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = (
+            f"{coordinator.api.station_id}_astro_moon_phase"
+        )
+
+    @property
+    def native_value(self) -> str | None:
+        return (self.coordinator.data or {}).get("astro", {}).get("moon_phase")
+
+    @property
+    def icon(self) -> str:
+        return {
+            "new_moon": "mdi:moon-new",
+            "waxing_crescent": "mdi:moon-waxing-crescent",
+            "first_quarter": "mdi:moon-first-quarter",
+            "waxing_gibbous": "mdi:moon-waxing-gibbous",
+            "full_moon": "mdi:moon-full",
+            "waning_gibbous": "mdi:moon-waning-gibbous",
+            "last_quarter": "mdi:moon-last-quarter",
+            "waning_crescent": "mdi:moon-waning-crescent",
+        }.get(self.native_value, "mdi:moon-waning-crescent")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        attributes = super().extra_state_attributes
+        astro = (self.coordinator.data or {}).get("astro", {})
+        attributes["raw_phase"] = astro.get("moon_phase_raw")
+        return attributes
+
+
+class EuskalmetOceanSensor(CoordinatorEntity, SensorEntity):
+    """Base for the official Euskalmet ocean forecast."""
+
+    _attr_has_entity_name = True
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return ocean_device_info(self.coordinator.api.station_id)
+
+    @property
+    def ocean(self) -> dict[str, Any]:
+        """Return the latest normalized ocean forecast."""
+
+        value = (self.coordinator.data or {}).get("ocean", {})
+        return value if isinstance(value, dict) else {}
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "issued_at": self.ocean.get("issued_at"),
+            "valid_for": self.ocean.get("valid_for"),
+            "source": self.ocean.get("source", "euskalmet_ocean_forecast"),
+        }
+
+
+class EuskalmetOceanForecastSensor(EuskalmetOceanSensor):
+    """Date and bilingual description of the maritime forecast."""
+
+    _attr_device_class = SensorDeviceClass.DATE
+    _attr_translation_key = "ocean_forecast"
+    _attr_icon = "mdi:waves"
+
+    def __init__(self, coordinator: EuskalmetCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.api.station_id}_ocean_forecast"
+
+    @property
+    def native_value(self) -> Any:
+        return self.ocean.get("valid_for_date")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        attributes = super().extra_state_attributes
+        texts = self.ocean.get("forecast_texts", {})
+        descriptions = self.ocean.get("forecast_descriptions", {})
+        language = (
+            "eu"
+            if str(self.coordinator.api.preferred_language).lower().startswith("eu")
+            else "es"
+        )
+        attributes.update(
+            {
+                "forecast_text": texts.get(language),
+                "forecast_description": descriptions.get(language),
+                "forecast_texts": texts,
+                "forecast_descriptions": descriptions,
+            }
+        )
+        return attributes
+
+
+class EuskalmetWaveHeightSensor(EuskalmetOceanSensor):
+    """Forecasted significant wave height."""
+
+    _attr_device_class = SensorDeviceClass.DISTANCE
+    _attr_state_class = "measurement"
+    _attr_native_unit_of_measurement = "m"
+    _attr_suggested_display_precision = 1
+    _attr_translation_key = "ocean_wave_height"
+    _attr_icon = "mdi:wave"
+
+    def __init__(self, coordinator: EuskalmetCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.api.station_id}_ocean_wave_height"
+
+    @property
+    def native_value(self) -> float | None:
+        return self.ocean.get("wave_height")
+
+
+class EuskalmetWaterTemperatureSensor(EuskalmetOceanSensor):
+    """Forecasted sea-water temperature."""
+
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_state_class = "measurement"
+    _attr_native_unit_of_measurement = "°C"
+    _attr_suggested_display_precision = 1
+    _attr_translation_key = "ocean_water_temperature"
+    _attr_icon = "mdi:coolant-temperature"
+
+    def __init__(self, coordinator: EuskalmetCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = (
+            f"{coordinator.api.station_id}_ocean_water_temperature"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        return self.ocean.get("water_temperature")
+
+
+class EuskalmetVisibilitySensor(EuskalmetOceanSensor):
+    """Minimum or maximum forecasted sea visibility."""
+
+    _attr_state_class = "measurement"
+    _attr_native_unit_of_measurement = "km"
+    _attr_suggested_display_precision = 1
+    _attr_icon = "mdi:weather-fog"
+
+    def __init__(
+        self,
+        coordinator: EuskalmetCoordinator,
+        boundary: str,
+    ) -> None:
+        super().__init__(coordinator)
+        self.boundary = boundary
+        self._attr_translation_key = f"ocean_visibility_{boundary}"
+        self._attr_unique_id = (
+            f"{coordinator.api.station_id}_ocean_visibility_{boundary}"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        return self.ocean.get(f"visibility_{self.boundary}")
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        attributes = super().extra_state_attributes
+        attributes.update(
+            {
+                "visibility_type": self.ocean.get("visibility_type"),
+                "visibility_id": self.ocean.get("visibility_id"),
+                "raw_unit": self.ocean.get("visibility_raw_unit"),
+            }
+        )
+        return attributes
+
+
+class EuskalmetTideSensor(CoordinatorEntity, SensorEntity):
+    """Base for Pasaia astronomical tide entities."""
+
+    _attr_has_entity_name = True
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return ocean_device_info(self.coordinator.api.station_id)
+
+    @property
+    def tides(self) -> dict[str, Any]:
+        value = (self.coordinator.data or {}).get("tides", {})
+        return value if isinstance(value, dict) else {}
+
+    def next_event(self, tide_type: str) -> dict[str, Any] | None:
+        events = self.tides.get("events", [])
+        if not isinstance(events, list):
+            return None
+        return next_tide_event(
+            events,
+            tide_type,
+            datetime.now(self.coordinator.api.time_zone),
+        )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        return {
+            "report_date": self.tides.get("date"),
+            "location": self.tides.get("location", "Pasaia"),
+            "source": self.tides.get("source", "euskalmet_astro_tides"),
+        }
+
+
+class EuskalmetTideStateSensor(EuskalmetTideSensor):
+    """Whether the astronomical tide is currently rising or falling."""
+
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["rising", "falling"]
+    _attr_translation_key = "ocean_tide_state"
+    _attr_icon = "mdi:waves-arrow-up"
+
+    def __init__(self, coordinator: EuskalmetCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{coordinator.api.station_id}_ocean_tide_state"
+
+    @property
+    def native_value(self) -> str | None:
+        high = self.next_event("high")
+        low = self.next_event("low")
+        candidates = [event for event in (high, low) if event is not None]
+        if not candidates:
+            return None
+        next_event = min(candidates, key=lambda event: event["time"])
+        return "rising" if next_event["type"] == "high" else "falling"
+
+    @property
+    def icon(self) -> str:
+        return (
+            "mdi:waves-arrow-up"
+            if self.native_value == "rising"
+            else "mdi:waves-arrow-down"
+        )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        attributes = super().extra_state_attributes
+        attributes["raw_tides"] = self.tides.get("raw_tides", [])
+        return attributes
+
+
+class EuskalmetTideTimeSensor(EuskalmetTideSensor):
+    """Timestamp of the next high or low tide."""
+
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_icon = "mdi:waves"
+
+    def __init__(
+        self,
+        coordinator: EuskalmetCoordinator,
+        tide_type: str,
+    ) -> None:
+        super().__init__(coordinator)
+        self.tide_type = tide_type
+        self._attr_translation_key = f"ocean_tide_{tide_type}"
+        self._attr_unique_id = (
+            f"{coordinator.api.station_id}_ocean_tide_{tide_type}"
+        )
+
+    @property
+    def native_value(self) -> datetime | None:
+        event = self.next_event(self.tide_type)
+        return event.get("time") if event else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        attributes = super().extra_state_attributes
+        event = self.next_event(self.tide_type)
+        attributes["height"] = event.get("height") if event else None
+        attributes["height_unit"] = "m"
+        return attributes
+
+
+class EuskalmetTideHeightSensor(EuskalmetTideSensor):
+    """Height of the next high or low tide."""
+
+    _attr_device_class = SensorDeviceClass.DISTANCE
+    _attr_state_class = "measurement"
+    _attr_native_unit_of_measurement = "m"
+    _attr_suggested_display_precision = 2
+    _attr_icon = "mdi:waves"
+
+    def __init__(
+        self,
+        coordinator: EuskalmetCoordinator,
+        tide_type: str,
+    ) -> None:
+        super().__init__(coordinator)
+        self.tide_type = tide_type
+        self._attr_translation_key = f"ocean_tide_{tide_type}_height"
+        self._attr_unique_id = (
+            f"{coordinator.api.station_id}_ocean_tide_{tide_type}_height"
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        event = self.next_event(self.tide_type)
+        return event.get("height") if event else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        attributes = super().extra_state_attributes
+        event = self.next_event(self.tide_type)
+        attributes["event_time"] = event.get("time") if event else None
+        return attributes
 
 
 class EuskalmetPollenSensor(CoordinatorEntity, SensorEntity):

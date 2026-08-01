@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import unicodedata
+from contextlib import suppress
 from datetime import UTC, date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -145,10 +146,8 @@ def parse_tide_report(
                 parsed_date = parsed_date.replace(tzinfo=time_zone)
             report_date = parsed_date.astimezone(time_zone).date()
         elif len(raw_date) >= 10:
-            try:
+            with suppress(ValueError):
                 report_date = date.fromisoformat(raw_date[:10])
-            except ValueError:
-                pass
 
     raw_tides = document.get("tides")
     items = raw_tides if isinstance(raw_tides, list) else []

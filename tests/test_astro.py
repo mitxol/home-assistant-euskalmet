@@ -87,6 +87,7 @@ def test_euskalmet_phase_codes_cover_the_lunar_cycle() -> None:
     assert normalize_moon_phase("FULL_MOON") == "full_moon"
     assert normalize_moon_phase("DECREASE_TO_QUARTER") == "waning_gibbous"
     assert normalize_moon_phase("LAST_QUARTER") == "last_quarter"
+    assert normalize_moon_phase("THIRD_QUARTER") == "last_quarter"
     assert normalize_moon_phase("DECREASE_TO_NEW") == "waning_crescent"
 
 

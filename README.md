@@ -23,7 +23,7 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Estado: **versión estable**. La versión actual es `2.12.0`.
+> Estado: **versión estable**. La versión actual es `2.12.1`.
 > Incluye traducción en castellano y euskera, mediciones de polen, una nueva
 > visualización interactiva de los históricos mensuales y predicción marítima.
 

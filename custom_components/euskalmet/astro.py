@@ -40,6 +40,7 @@ MOON_PHASE_ALIASES = {
     "full_to_quarter": "waning_gibbous",
     "gibosa_menguante": "waning_gibbous",
     "last_quarter": "last_quarter",
+    "third_quarter": "last_quarter",
     "decrease_quarter": "last_quarter",
     "cuarto_menguante": "last_quarter",
     "azken_laurdena": "last_quarter",

@@ -23,7 +23,7 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Estado: **versión estable**. La versión actual es `2.12.1`.
+> Estado: **versión estable**. La versión actual es `2.12.2`.
 > Incluye traducción en castellano y euskera, mediciones de polen, una nueva
 > visualización interactiva de los históricos mensuales y predicción marítima.
 
@@ -68,7 +68,7 @@ captadora oficial más próxima a la estación meteorológica:
 
 ## Requisitos
 
-1. Home Assistant `2026.7.0` o posterior.
+1. Home Assistant `2026.8.0` o posterior.
 2. HACS para la instalación recomendada.
 3. Credenciales personales de acceso a la API de Euskalmet: correo electrónico
    y clave privada (privatekey.pem).

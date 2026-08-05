@@ -17,8 +17,8 @@
     "custom_components.euskalmet"
   ],
   "requirements": [
-    "PyJWT==2.12.1",
+    "PyJWT==2.13.0",
     "cryptography==48.0.1"
   ],
-  "version": "2.12.1"
+  "version": "2.12.2"
 }

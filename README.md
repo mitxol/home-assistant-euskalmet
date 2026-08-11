@@ -23,9 +23,7 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Estado: **versión estable**. La versión actual es `2.12.2`.
-> Incluye traducción en castellano y euskera, mediciones de polen, una nueva
-> visualización interactiva de los históricos mensuales y predicción marítima.
+> Versión `2.12.3`.
 
 ## Funciones
 
@@ -84,6 +82,11 @@ Las credenciales se solicitan en el
 3. Accede al portal y descarga el archivo ZIP con las claves. Para configurar
    la integración necesitarás el correo electrónico registrado y el archivo
    `privatekey.pem` incluido en el ZIP.
+
+> **Nota sobre el registro:** actualmente puede haber problemas para recibir el
+> correo de confirmación necesario para activar una cuenta. Mientras se
+> resuelven, puede utilizarse la opción de registro con Google, con una cuenta
+> que no esté pendiente de activación.
 
 ![Acceso y registro en Open Data Euskadi](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/registro-opendata-euskadi.png)
 
@@ -291,6 +294,8 @@ La tarjeta adapta automáticamente sus textos al castellano o al euskera y
 muestra cada riesgo activo con su descripción. Cada instalación puede asignar
 un ID distinto; copia el ID del sensor «Nivel de aviso» desde sus ajustes y
 sustituye el del ejemplo si fuese necesario.
+
+![Aviso meteorológico activo de Euskalmet mostrado en euskera](https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/aviso-meteorologico-activo-eu.png)
 
 ## Actualización y tolerancia a fallos
 

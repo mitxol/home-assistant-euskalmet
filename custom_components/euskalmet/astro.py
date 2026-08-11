@@ -18,6 +18,7 @@ MOON_PHASE_ALIASES = {
     "ilberria": "new_moon",
     "waxing_crescent": "waxing_crescent",
     "increase_to_quarter": "waxing_crescent",
+    "increase_to_first_quarter": "waxing_crescent",
     "new_to_quarter": "waxing_crescent",
     "luna_creciente": "waxing_crescent",
     "creciente": "waxing_crescent",
@@ -28,6 +29,7 @@ MOON_PHASE_ALIASES = {
     "lehen_laurdena": "first_quarter",
     "waxing_gibbous": "waxing_gibbous",
     "increase_to_full": "waxing_gibbous",
+    "increase_to_full_moon": "waxing_gibbous",
     "quarter_to_full": "waxing_gibbous",
     "gibosa_creciente": "waxing_gibbous",
     "full_moon": "full_moon",
@@ -37,6 +39,8 @@ MOON_PHASE_ALIASES = {
     "ilbetea": "full_moon",
     "waning_gibbous": "waning_gibbous",
     "decrease_to_quarter": "waning_gibbous",
+    "decrease_to_last_quarter": "waning_gibbous",
+    "decrease_to_third_quarter": "waning_gibbous",
     "full_to_quarter": "waning_gibbous",
     "gibosa_menguante": "waning_gibbous",
     "last_quarter": "last_quarter",
@@ -45,7 +49,11 @@ MOON_PHASE_ALIASES = {
     "cuarto_menguante": "last_quarter",
     "azken_laurdena": "last_quarter",
     "waning_crescent": "waning_crescent",
+    # Euskalmet uses DECREASE_TO_FULL_MOON for the interval after the third
+    # quarter. Keep this production spelling even though its name is unusual.
+    "decrease_to_full_moon": "waning_crescent",
     "decrease_to_new": "waning_crescent",
+    "decrease_to_new_moon": "waning_crescent",
     "quarter_to_new": "waning_crescent",
     "luna_menguante": "waning_crescent",
     "menguante": "waning_crescent",
@@ -66,7 +74,24 @@ def normalize_moon_phase(value: object) -> str | None:
 
     if value is None:
         return None
-    return MOON_PHASE_ALIASES.get(_slug(value))
+    slug = _slug(value)
+    normalized = MOON_PHASE_ALIASES.get(slug)
+    if normalized is not None:
+        return normalized
+
+    # Tolerate harmless API naming variants while keeping truly unknown values
+    # as None so their raw value remains visible for diagnostics.
+    if slug.startswith("increase_to_"):
+        if "quarter" in slug:
+            return "waxing_crescent"
+        if "full" in slug:
+            return "waxing_gibbous"
+    if slug.startswith("decrease_to_"):
+        if "quarter" in slug:
+            return "waning_gibbous"
+        if "new" in slug:
+            return "waning_crescent"
+    return None
 
 
 def parse_astro_date(

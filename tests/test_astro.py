@@ -89,6 +89,18 @@ def test_euskalmet_phase_codes_cover_the_lunar_cycle() -> None:
     assert normalize_moon_phase("LAST_QUARTER") == "last_quarter"
     assert normalize_moon_phase("THIRD_QUARTER") == "last_quarter"
     assert normalize_moon_phase("DECREASE_TO_NEW") == "waning_crescent"
+    assert normalize_moon_phase("DECREASE_TO_FULL_MOON") == "waning_crescent"
+
+
+def test_euskalmet_phase_code_variants_are_normalized() -> None:
+    assert normalize_moon_phase("INCREASE_TO_FIRST_QUARTER") == (
+        "waxing_crescent"
+    )
+    assert normalize_moon_phase("INCREASE_TO_FULL_MOON") == "waxing_gibbous"
+    assert normalize_moon_phase("DECREASE_TO_THIRD_QUARTER") == (
+        "waning_gibbous"
+    )
+    assert normalize_moon_phase("DECREASE_TO_NEW_MOON") == "waning_crescent"
 
 
 def test_unknown_phase_is_preserved_as_raw_attribute() -> None:

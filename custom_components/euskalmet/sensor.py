@@ -21,6 +21,7 @@ from .entity import (
     summary_device_info,
 )
 from .formatting import degrees_to_compass
+from .pollen import pollen_species_value
 from .tides import next_tide_event
 
 PARALLEL_UPDATES = 0
@@ -727,12 +728,7 @@ class EuskalmetPollenSpeciesSensor(EuskalmetPollenSensor):
     @property
     def native_value(self) -> float | None:
         pollen = (self.coordinator.data or {}).get("pollen", {})
-        if not pollen.get("observed_on"):
-            return None
-        measurement = pollen.get("species", {}).get(self.specie_id)
-        if not isinstance(measurement, dict):
-            return 0.0
-        return measurement.get("value")
+        return pollen_species_value(pollen, self.specie_id)
 
 
 class EuskalmetSummarySensor(CoordinatorEntity, SensorEntity):

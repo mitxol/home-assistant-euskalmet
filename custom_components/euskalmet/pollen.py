@@ -80,20 +80,42 @@ def parse_pollen_measurements(
     except ValueError as err:
         raise ValueError("La API de polen devolvió una fecha no válida") from err
 
+    # The API omits taxa with a zero count from some daily records. Build the
+    # entity catalogue from the complete lookback response so entities that
+    # were reported on earlier days are still created after a restart.
     species: dict[str, dict[str, Any]] = {}
-    measurements = latest.get("measurements", [])
-    if isinstance(measurements, list):
+    for record in records:
+        measurements = record.get("measurements", [])
+        if not isinstance(measurements, list):
+            continue
         for measurement in measurements:
             if not isinstance(measurement, dict):
                 continue
             specie_id = measurement.get("specieId")
-            value = measurement.get("pollenCount")
-            if not isinstance(specie_id, str) or not isinstance(value, (int, float)):
+            if not isinstance(specie_id, str):
                 continue
             species[specie_id] = {
                 "name": str(measurement.get("specieName") or specie_id),
-                "value": float(value),
+                "value": 0.0,
             }
+
+    latest_measurements = latest.get("measurements", [])
+    if isinstance(latest_measurements, list):
+        for measurement in latest_measurements:
+            if not isinstance(measurement, dict):
+                continue
+            specie_id = measurement.get("specieId")
+            value = measurement.get("pollenCount")
+            if (
+                not isinstance(specie_id, str)
+                or isinstance(value, bool)
+                or not isinstance(value, (int, float))
+            ):
+                continue
+            species.setdefault(
+                specie_id,
+                {"name": str(measurement.get("specieName") or specie_id)},
+            )["value"] = float(value)
 
     total = latest.get("measurementsTotalCount")
     return {
@@ -105,3 +127,23 @@ def parse_pollen_measurements(
         "total": float(total) if isinstance(total, (int, float)) else None,
         "species": species,
     }
+
+
+def pollen_species_value(pollen: object, specie_id: str) -> float | None:
+    """Return a taxon count, treating omitted taxa as zero in a valid sample."""
+
+    if not isinstance(pollen, dict) or not pollen.get("observed_on"):
+        return None
+
+    species = pollen.get("species")
+    if not isinstance(species, dict):
+        return 0.0
+
+    measurement = species.get(specie_id)
+    if not isinstance(measurement, dict):
+        return 0.0
+
+    value = measurement.get("value")
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return 0.0
+    return float(value)

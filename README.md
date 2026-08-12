@@ -23,7 +23,7 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Versión `2.12.3`.
+> Versión `2.12.4`.
 
 ## Funciones
 

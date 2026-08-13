@@ -19,6 +19,8 @@ MOON_PHASE_ALIASES = {
     "waxing_crescent": "waxing_crescent",
     "increase_to_quarter": "waxing_crescent",
     "increase_to_first_quarter": "waxing_crescent",
+    "grow_to_quarter": "waxing_crescent",
+    "grow_to_first_quarter": "waxing_crescent",
     "new_to_quarter": "waxing_crescent",
     "luna_creciente": "waxing_crescent",
     "creciente": "waxing_crescent",
@@ -30,6 +32,8 @@ MOON_PHASE_ALIASES = {
     "waxing_gibbous": "waxing_gibbous",
     "increase_to_full": "waxing_gibbous",
     "increase_to_full_moon": "waxing_gibbous",
+    "grow_to_full": "waxing_gibbous",
+    "grow_to_full_moon": "waxing_gibbous",
     "quarter_to_full": "waxing_gibbous",
     "gibosa_creciente": "waxing_gibbous",
     "full_moon": "full_moon",
@@ -41,6 +45,9 @@ MOON_PHASE_ALIASES = {
     "decrease_to_quarter": "waning_gibbous",
     "decrease_to_last_quarter": "waning_gibbous",
     "decrease_to_third_quarter": "waning_gibbous",
+    "shrink_to_quarter": "waning_gibbous",
+    "shrink_to_last_quarter": "waning_gibbous",
+    "shrink_to_third_quarter": "waning_gibbous",
     "full_to_quarter": "waning_gibbous",
     "gibosa_menguante": "waning_gibbous",
     "last_quarter": "last_quarter",
@@ -54,6 +61,8 @@ MOON_PHASE_ALIASES = {
     "decrease_to_full_moon": "waning_crescent",
     "decrease_to_new": "waning_crescent",
     "decrease_to_new_moon": "waning_crescent",
+    "shrink_to_new": "waning_crescent",
+    "shrink_to_new_moon": "waning_crescent",
     "quarter_to_new": "waning_crescent",
     "luna_menguante": "waning_crescent",
     "menguante": "waning_crescent",
@@ -81,12 +90,12 @@ def normalize_moon_phase(value: object) -> str | None:
 
     # Tolerate harmless API naming variants while keeping truly unknown values
     # as None so their raw value remains visible for diagnostics.
-    if slug.startswith("increase_to_"):
+    if slug.startswith(("increase_to_", "grow_to_")):
         if "quarter" in slug:
             return "waxing_crescent"
         if "full" in slug:
             return "waxing_gibbous"
-    if slug.startswith("decrease_to_"):
+    if slug.startswith(("decrease_to_", "shrink_to_")):
         if "quarter" in slug:
             return "waning_gibbous"
         if "new" in slug:

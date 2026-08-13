@@ -103,6 +103,15 @@ def test_euskalmet_phase_code_variants_are_normalized() -> None:
     assert normalize_moon_phase("DECREASE_TO_NEW_MOON") == "waning_crescent"
 
 
+def test_grow_and_shrink_phase_families_are_normalized() -> None:
+    assert normalize_moon_phase("GROW_TO_QUARTER") == "waxing_crescent"
+    assert normalize_moon_phase("GROW_TO_FIRST_QUARTER") == "waxing_crescent"
+    assert normalize_moon_phase("GROW_TO_FULL_MOON") == "waxing_gibbous"
+    assert normalize_moon_phase("SHRINK_TO_QUARTER") == "waning_gibbous"
+    assert normalize_moon_phase("SHRINK_TO_LAST_QUARTER") == "waning_gibbous"
+    assert normalize_moon_phase("SHRINK_TO_NEW_MOON") == "waning_crescent"
+
+
 def test_unknown_phase_is_preserved_as_raw_attribute() -> None:
     result = parse_astro_calendar(
         {"moon": {"phase": "Fase futura"}, "sun": {}},

@@ -23,7 +23,7 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Versión `2.12.5`.
+> Versión `2.12.6`.
 
 ## Funciones
 
@@ -34,7 +34,7 @@ de Euskalmet y Open Data Euskadi.
   precipitación.
 - Entidad meteorológica con condiciones actuales y previsión horaria y diaria.
 - Avisos meteorológicos filtrados para la zona de la estación.
-- Radar animado de Kapildui sobre un mapa OpenStreetMap desaturado.
+- Radar animado de Kapildui sobre un mapa base claro y sin claves externas.
 - Resúmenes diarios, mensuales y anuales en un dispositivo estadístico separado.
 - Histórico consultado bajo demanda, sin importar datos antiguos a Recorder.
 - Caché y endpoints agregados para reducir el número de peticiones a la API.
@@ -200,7 +200,7 @@ puntos > Recursos**, con tipo **Módulo JavaScript**:
 
 ```text
 /euskalmet_static/euskalmet-history-card.js?v=4
-/euskalmet_static/weather-radar-card-euskalmet.js?v=3
+/euskalmet_static/weather-radar-card-euskalmet.js?v=5
 /euskalmet_static/euskalmet-alert-card.js?v=1
 ```
 

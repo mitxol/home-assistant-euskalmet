@@ -23,7 +23,7 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Versión `2.12.6`.
+> Versión `2.12.7`. [Cambios de esta versión](CAMBIOS-2.12.7.md).
 
 ## Funciones
 
@@ -40,6 +40,8 @@ de Euskalmet y Open Data Euskadi.
 - Caché y endpoints agregados para reducir el número de peticiones a la API.
 - Conservación del último valor válido ante respuestas temporales incompletas.
 - Recuento total y sensores dinámicos por tipo polínico.
+- Recuperación de especies de polen ya registradas aunque dejen de aparecer
+  en la ventana de datos de 60 días, sin perder sus entidades al reiniciar.
 - Calendario astronómico oficial con Sol, Luna y mareas de Pasaia.
 - Previsión marítima del Cantábrico con oleaje, temperatura y visibilidad.
 - Interfaz disponible en castellano y euskera según el idioma de Home Assistant.
@@ -336,17 +338,21 @@ Antes de abrir una incidencia:
 ## Fuente de datos, marca y atribuciones
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/docs/images/euskalmet-logo.jpg" alt="Euskalmet — Agencia Vasca de Meteorología" width="360">
+  <img src="https://raw.githubusercontent.com/mitxol/home-assistant-euskalmet/main/custom_components/euskalmet/brand/icon.png" alt="Símbolo de Euskalmet, fuente de datos de esta integración comunitaria" width="128">
 </p>
 
 **Datos meteorológicos proporcionados por Euskalmet — Agencia Vasca de
 Meteorología**, a través de Euskalmet y Open Data Euskadi.
 
-El logotipo oficial se reproduce únicamente para atribuir la procedencia de los
-datos, con la autorización indicada por Euskalmet. No forma parte de la
-identidad visual de esta integración y no implica afiliación, patrocinio,
-mantenimiento ni soporte oficial. El icono comunitario de la integración es un
-diseño independiente.
+El símbolo circular oficial se reproduce para atribuir la procedencia de los
+datos, con la autorización indicada por Euskalmet. Se usa
+como icono para identificar la fuente de datos y no implica afiliación,
+patrocinio, mantenimiento ni soporte oficial de esta integración comunitaria.
+
+La integración incluye únicamente el símbolo circular de la fuente de datos
+en `custom_components/euskalmet/brand/`. Desde Home Assistant 2026.3,
+Home Assistant utiliza estas imágenes locales sin necesitar una solicitud al
+repositorio Home Assistant Brands.
 
 La tarjeta de radar se basa en el proyecto comunitario
 [Weather Radar Card](https://github.com/jpettitt/weather-radar-card) y conserva

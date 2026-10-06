@@ -21,7 +21,7 @@ from .entity import (
     summary_device_info,
 )
 from .formatting import degrees_to_compass
-from .pollen import pollen_species_value
+from .pollen import pollen_species_value, registered_pollen_species
 from .tides import next_tide_event
 
 PARALLEL_UPDATES = 0
@@ -268,13 +268,31 @@ async def async_setup_entry(
 
     pollen_species: set[str] = set()
     pollen_total_added = False
+    registered_species = registered_pollen_species(
+        (
+            (entity.unique_id, entity.original_name)
+            for entity in er.async_entries_for_config_entry(registry, entry.entry_id)
+            if entity.domain == "sensor" and entity.platform == DOMAIN
+        ),
+        coordinator.api.station_id,
+        coordinator.api.pollen_municipality_id,
+    )
 
     def add_pollen_entities() -> None:
         nonlocal pollen_total_added
         pollen = (coordinator.data or {}).get("pollen", {})
-        species = pollen.get("species", {}) if isinstance(pollen, dict) else {}
-        if not isinstance(species, dict):
-            return
+        reported_species = (
+            pollen.get("species", {}) if isinstance(pollen, dict) else {}
+        )
+        # Recreate registered taxa even if they have disappeared from the API's
+        # 60-day window. Do not inject synthetic values into the actual sample.
+        species = dict(registered_species)
+        if isinstance(reported_species, dict):
+            species.update(
+                (key, value)
+                for key, value in reported_species.items()
+                if isinstance(value, dict)
+            )
 
         new_species = set(species) - pollen_species
         pollen_entities: list[SensorEntity] = []

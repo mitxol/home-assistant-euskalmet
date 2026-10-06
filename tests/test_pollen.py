@@ -14,12 +14,41 @@ SPEC.loader.exec_module(MODULE)
 nearest_pollen_station = MODULE.nearest_pollen_station
 parse_pollen_measurements = MODULE.parse_pollen_measurements
 pollen_species_value = MODULE.pollen_species_value
+registered_pollen_species = MODULE.registered_pollen_species
 
 
 def test_nearest_pollen_station() -> None:
     assert nearest_pollen_station(43.263, -2.935)[0] == "020"
     assert nearest_pollen_station(42.847, -2.673)[0] == "059"
     assert nearest_pollen_station(43.318, -1.981)[0] == "069"
+
+
+def test_registered_species_survive_the_lookback_window() -> None:
+    taxa = ("cupress_taxaceae", "eucalyptus", "ligustrum", "pinus")
+    result = registered_pollen_species(
+        [(f"arkauti_pollen_059_{taxon}", taxon.title()) for taxon in taxa],
+        "arkauti", "059",
+    )
+    assert set(result) == set(taxa)
+    for taxon in taxa:
+        assert result[taxon]["name"] == taxon.title()
+        assert "value" not in result[taxon]
+        assert pollen_species_value({"observed_on": "2026-10-06"}, taxon) == 0.0
+        assert pollen_species_value({}, taxon) is None
+
+
+def test_registered_species_exclude_other_stations_and_total() -> None:
+    result = registered_pollen_species(
+        [
+            ("arkauti_pollen_059_total", "Polen total"),
+            ("arkauti_pollen_059_", None),
+            ("arkauti_pollen_020_pinus", "Pinus"),
+            ("other_pollen_059_pinus", "Pinus"),
+            ("arkauti_pollen_059_pinus", None),
+        ],
+        "arkauti", "059",
+    )
+    assert result == {"pinus": {"name": "pinus"}}
 
 
 def test_parse_pollen_measurements_selects_newest_record() -> None:

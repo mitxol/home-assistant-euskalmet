@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from datetime import date
 from math import asin, cos, radians, sin, sqrt
 from typing import Any
@@ -127,6 +128,25 @@ def parse_pollen_measurements(
         "total": float(total) if isinstance(total, (int, float)) else None,
         "species": species,
     }
+
+
+def registered_pollen_species(
+    entries: Iterable[tuple[str, str | None]],
+    station_id: str,
+    municipality_id: str,
+) -> dict[str, dict[str, Any]]:
+    """Recover taxa for this station from existing entity unique IDs."""
+
+    prefix = f"{station_id}_pollen_{municipality_id}_"
+    species = {}
+    for unique_id, original_name in entries:
+        if not unique_id.startswith(prefix):
+            continue
+        specie_id = unique_id[len(prefix):]
+        if not specie_id or specie_id == "total":
+            continue
+        species[specie_id] = {"name": original_name or specie_id}
+    return species
 
 
 def pollen_species_value(pollen: object, specie_id: str) -> float | None:

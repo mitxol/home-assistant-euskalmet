@@ -183,8 +183,9 @@ async def async_setup_entry(
     # magnitudes que esta estación no publica.
     registry = er.async_get(hass)
     device_registry = dr.async_get(hass)
-    obsolete_astronomy_device = device_registry.async_get_device(
-        identifiers={(DOMAIN, f"{coordinator.api.station_id}_astronomy")}
+    obsolete_astronomy_device = device_registry.async_get_device_by_identifier(
+        (DOMAIN, f"{coordinator.api.station_id}_astronomy"),
+        entry.entry_id,
     )
     if obsolete_astronomy_device is not None:
         device_registry.async_remove_device(obsolete_astronomy_device.id)
@@ -331,7 +332,10 @@ class EuskalmetAstroSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        return ocean_device_info(self.coordinator.api.station_id)
+        return ocean_device_info(
+            self.coordinator.api.station_id,
+            self.coordinator.device_id,
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -415,7 +419,10 @@ class EuskalmetOceanSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        return ocean_device_info(self.coordinator.api.station_id)
+        return ocean_device_info(
+            self.coordinator.api.station_id,
+            self.coordinator.device_id,
+        )
 
     @property
     def ocean(self) -> dict[str, Any]:
@@ -553,7 +560,10 @@ class EuskalmetTideSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        return ocean_device_info(self.coordinator.api.station_id)
+        return ocean_device_info(
+            self.coordinator.api.station_id,
+            self.coordinator.device_id,
+        )
 
     @property
     def tides(self) -> dict[str, Any]:
@@ -696,6 +706,7 @@ class EuskalmetPollenSensor(CoordinatorEntity, SensorEntity):
             self.coordinator.api.station_id,
             self.coordinator.api.pollen_municipality_id,
             self.coordinator.api.pollen_municipality_name,
+            self.coordinator.device_id,
         )
 
     @property
@@ -787,6 +798,7 @@ class EuskalmetSummarySensor(CoordinatorEntity, SensorEntity):
         return summary_device_info(
             self.coordinator.api.station_id,
             self.coordinator.api.station_name,
+            self.coordinator.device_id,
         )
 
     def _summary(self) -> dict[str, Any]:

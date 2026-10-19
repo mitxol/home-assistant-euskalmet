@@ -5,7 +5,9 @@ import logging
 from datetime import UTC, date, datetime
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import (
     async_get_clientsession,
 )
@@ -13,8 +15,14 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
+from homeassistant.util import dt as dt_util
 
-from .api import EuskalmetAPI, EuskalmetAPIError, EuskalmetNotFoundError
+from .api import (
+    EuskalmetAPI,
+    EuskalmetAPIError,
+    EuskalmetAuthenticationError,
+    EuskalmetNotFoundError,
+)
 from .const import (
     ALERTS_UPDATE_INTERVAL,
     DAILY_FORECAST_UPDATE_INTERVAL,
@@ -38,6 +46,7 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
     def __init__(
         self,
         hass: HomeAssistant,
+        config_entry: ConfigEntry | None,
         email: str,
         private_key: str,
         region: str,
@@ -65,14 +74,19 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
             pollen_municipality_id=pollen_id,
             pollen_municipality_name=pollen_name,
             preferred_language=hass.config.language,
-            time_zone=hass.config.time_zone,
+            time_zone=dt_util.get_default_time_zone(),
         )
         self._failed_endpoints: set[str] = set()
         self.config_entry_id = ""
+        self.device_id: str | None = None
         self._summary_day: Any = None
         self._summary_day_attempted: datetime | None = None
+        self._summary_day_date: date | None = None
         self._month_summary: Any = None
         self._month_summary_attempted: datetime | None = None
+        self._month_summary_period: tuple[int, int] | None = None
+        self._year_months_year: int | None = None
+        self._year_months_month: int | None = None
         self._year_months: dict[int, Any] = {}
         self._year_month_attempted: dict[int, datetime] = {}
         self._daily_forecast: list[dict[str, Any]] | None = None
@@ -93,6 +107,7 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=config_entry,
             name="euskalmet",
             update_interval=UPDATE_INTERVAL,
         )
@@ -102,6 +117,8 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
 
         try:
             station = await self.api.get_station()
+        except EuskalmetAuthenticationError as err:
+            raise ConfigEntryAuthFailed(str(err)) from err
         except EuskalmetAPIError as err:
             raise UpdateFailed(f"No se pudo obtener la estación: {err}") from err
 
@@ -166,27 +183,41 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
         """Actualizar todos los datos de Euskalmet."""
 
         now_utc = datetime.now(UTC)
+        local_now = now_utc.astimezone(self.api.time_zone)
+        local_today = local_now.date()
+        local_period = (local_now.year, local_now.month)
 
-        summary_day_due = update_due(
+        # Tras la medianoche (o el cambio de mes) los resúmenes guardados
+        # pertenecen al periodo anterior: se piden de nuevo sin esperar al
+        # intervalo normal para no mostrar los acumulados de ayer como de hoy.
+        day_rollover = self._summary_day_date != local_today
+        month_rollover = self._month_summary_period != local_period
+        summary_day_due = day_rollover or update_due(
             self._summary_day_attempted,
             DAY_SUMMARY_UPDATE_INTERVAL,
             now_utc,
         )
         if summary_day_due:
             self._summary_day_attempted = now_utc
+            self._summary_day_date = local_today
         summary_day_call = (
             self.api.get_aggregated_day_summary()
             if summary_day_due
             else asyncio.sleep(0, result=self._summary_day or {})
         )
 
-        month_due = update_due(
+        month_due = month_rollover or update_due(
             self._month_summary_attempted,
             MONTH_SUMMARY_UPDATE_INTERVAL,
             now_utc,
         )
         if month_due:
             self._month_summary_attempted = now_utc
+            self._month_summary_period = local_period
+        if month_rollover:
+            self._month_summary = None
+        if day_rollover:
+            self._summary_day = None
         month_call = (
             self.api.get_aggregated_month_summary()
             if month_due
@@ -273,7 +304,6 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
             if pollen_due
             else asyncio.sleep(0, result=self._pollen or {})
         )
-        local_today = datetime.now(self.api.time_zone).date()
         astro_due = self._astro_attempt_date != local_today
         if astro_due:
             self._astro_attempt_date = local_today
@@ -314,6 +344,9 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
 
         if isinstance(current_result, asyncio.CancelledError):
             raise current_result
+
+        if isinstance(current_result, EuskalmetAuthenticationError):
+            raise ConfigEntryAuthFailed(str(current_result)) from current_result
 
         if isinstance(current_result, Exception):
             raise UpdateFailed(
@@ -409,7 +442,10 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
                 summary_day_result,
                 self._summary_day or {},
             )
-            if isinstance(summary_day_result, EuskalmetNotFoundError):
+            if isinstance(summary_day_result, EuskalmetNotFoundError) or (
+                day_rollover and isinstance(summary_day_result, Exception)
+            ):
+                summary_day = {}
                 self._summary_day = {}
             elif not isinstance(summary_day_result, Exception):
                 self._summary_day = summary_day
@@ -424,9 +460,25 @@ class EuskalmetCoordinator(DataUpdateCoordinator):
             )
             if not isinstance(summary_month_result, Exception):
                 self._month_summary = summary_month
+            elif month_rollover:
+                summary_month = {}
         else:
             summary_month = self._month_summary or {}
-        local_now = datetime.now(self.api.time_zone)
+
+        # Los meses anteriores se cachean sin caducidad. Al cambiar de año se
+        # descartan y, al cambiar de mes, el mes recién cerrado se vuelve a
+        # descargar para incluir sus últimas horas.
+        if self._year_months_year != local_now.year:
+            self._year_months.clear()
+            self._year_month_attempted.clear()
+        elif (
+            self._year_months_month is not None
+            and self._year_months_month != local_now.month
+        ):
+            self._year_months.pop(self._year_months_month, None)
+            self._year_month_attempted.pop(self._year_months_month, None)
+        self._year_months_year = local_now.year
+        self._year_months_month = local_now.month
         self._year_months[local_now.month] = summary_month
         missing_months = [
             month

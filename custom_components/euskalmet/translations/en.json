@@ -1,0 +1,300 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Euskalmet",
+        "description": "Enter your access details. In the next step you can choose a weather station and see which measurements it provides.",
+        "data": {
+          "email": "Email",
+          "private_key": "Private key"
+        }
+      },
+      "station": {
+        "title": "Choose a weather station",
+        "description": "Found {station_count} active weather stations. Each option shows how many measurements it provides and which are missing. Tide gauges and stations without weather data are not listed.",
+        "data": {
+          "station_id": "Station"
+        }
+      },
+      "confirm": {
+        "title": "Confirm incomplete station",
+        "description": "Station **{station}** provides: {available}.\n\nIt does not provide: **{missing}**.\n\nSensors will only be created for the available measurements. Press Submit to add it anyway.",
+        "data": {}
+      },
+      "reauth_confirm": {
+        "title": "Update Euskalmet credentials",
+        "description": "Euskalmet rejected the current credentials. Enter your email and private key again.",
+        "data": {
+          "email": "Email",
+          "private_key": "Private key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The Euskalmet credentials are not valid.",
+      "cannot_connect": "Could not connect to Euskalmet. Please try again.",
+      "cannot_determine_location": "Could not match the selected station with a Euskalmet forecast location.",
+      "cannot_load_stations": "Could not load the official station catalogue.",
+      "no_compatible_stations": "No weather stations were found that publish any of the supported measurements.",
+      "station_not_available": "The selected station is no longer available. Open the configuration again."
+    },
+    "abort": {
+      "already_configured": "The integration is already configured.",
+      "reauth_successful": "The credentials have been updated."
+    }
+  },
+  "device": {
+    "summaries": {
+      "name": "{station_name} - Summaries and statistics"
+    },
+    "pollen_station": {
+      "name": "Pollen - {municipality_name}"
+    },
+    "astronomy": {
+      "name": "{station_name} - Astronomy"
+    },
+    "ocean": {
+      "name": "Euskalmet - Bay of Biscay"
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "weather_alert": {
+        "name": "Weather alert"
+      }
+    },
+    "camera": {
+      "precipitation_radar": {
+        "name": "Precipitation radar"
+      }
+    },
+    "sensor": {
+      "temperature": {
+        "name": "Temperature"
+      },
+      "humidity": {
+        "name": "Humidity"
+      },
+      "pressure": {
+        "name": "Pressure"
+      },
+      "wind_speed": {
+        "name": "Wind speed"
+      },
+      "wind_gust": {
+        "name": "Wind gust"
+      },
+      "wind_direction": {
+        "name": "Wind direction"
+      },
+      "irradiance": {
+        "name": "Solar irradiance"
+      },
+      "precipitation": {
+        "name": "Precipitation"
+      },
+      "pollen_total": {
+        "name": "Total pollen"
+      },
+      "ocean_forecast": {
+        "name": "Marine forecast"
+      },
+      "ocean_wave_height": {
+        "name": "Wave height"
+      },
+      "ocean_water_temperature": {
+        "name": "Water temperature"
+      },
+      "ocean_visibility_min": {
+        "name": "Minimum visibility"
+      },
+      "ocean_visibility_max": {
+        "name": "Maximum visibility"
+      },
+      "ocean_tide_state": {
+        "name": "Tide state",
+        "state": {
+          "rising": "Rising",
+          "falling": "Falling"
+        }
+      },
+      "ocean_tide_high": {
+        "name": "Next high tide"
+      },
+      "ocean_tide_high_height": {
+        "name": "Next high tide height"
+      },
+      "ocean_tide_low": {
+        "name": "Next low tide"
+      },
+      "ocean_tide_low_height": {
+        "name": "Next low tide height"
+      },
+      "astro_moonrise": {
+        "name": "Moonrise"
+      },
+      "astro_moonset": {
+        "name": "Moonset"
+      },
+      "astro_sunrise": {
+        "name": "Sunrise"
+      },
+      "astro_sunset": {
+        "name": "Sunset"
+      },
+      "astro_moon_phase": {
+        "name": "Moon phase",
+        "state": {
+          "new_moon": "New moon",
+          "waxing_crescent": "Waxing crescent",
+          "first_quarter": "First quarter",
+          "waxing_gibbous": "Waxing gibbous",
+          "full_moon": "Full moon",
+          "waning_gibbous": "Waning gibbous",
+          "last_quarter": "Last quarter",
+          "waning_crescent": "Waning crescent"
+        }
+      },
+      "summary_precipitation_today": {
+        "name": "Precipitation today"
+      },
+      "summary_precipitation_month": {
+        "name": "Precipitation this month"
+      },
+      "summary_precipitation_year": {
+        "name": "Precipitation this year"
+      },
+      "summary_temperature_min_today": {
+        "name": "Minimum temperature today"
+      },
+      "summary_temperature_mean_today": {
+        "name": "Mean temperature today"
+      },
+      "summary_temperature_max_today": {
+        "name": "Maximum temperature today"
+      },
+      "summary_temperature_min_month": {
+        "name": "Minimum temperature this month"
+      },
+      "summary_temperature_mean_month": {
+        "name": "Mean temperature this month"
+      },
+      "summary_temperature_max_month": {
+        "name": "Maximum temperature this month"
+      },
+      "summary_temperature_min_year": {
+        "name": "Minimum temperature this year"
+      },
+      "summary_temperature_mean_year": {
+        "name": "Mean temperature this year"
+      },
+      "summary_temperature_max_year": {
+        "name": "Maximum temperature this year"
+      },
+      "summary_wind_gust_max_today": {
+        "name": "Maximum wind gust today"
+      },
+      "summary_wind_gust_max_month": {
+        "name": "Maximum wind gust this month"
+      },
+      "summary_wind_gust_max_year": {
+        "name": "Maximum wind gust this year"
+      },
+      "summary_humidity_min_today": {
+        "name": "Minimum humidity today"
+      },
+      "summary_humidity_mean_today": {
+        "name": "Mean humidity today"
+      },
+      "summary_humidity_max_today": {
+        "name": "Maximum humidity today"
+      },
+      "summary_humidity_min_month": {
+        "name": "Minimum humidity this month"
+      },
+      "summary_humidity_mean_month": {
+        "name": "Mean humidity this month"
+      },
+      "summary_humidity_max_month": {
+        "name": "Maximum humidity this month"
+      },
+      "summary_humidity_min_year": {
+        "name": "Minimum humidity this year"
+      },
+      "summary_humidity_mean_year": {
+        "name": "Mean humidity this year"
+      },
+      "summary_humidity_max_year": {
+        "name": "Maximum humidity this year"
+      },
+      "summary_pressure_min_today": {
+        "name": "Minimum pressure today"
+      },
+      "summary_pressure_mean_today": {
+        "name": "Mean pressure today"
+      },
+      "summary_pressure_max_today": {
+        "name": "Maximum pressure today"
+      },
+      "summary_pressure_min_month": {
+        "name": "Minimum pressure this month"
+      },
+      "summary_pressure_mean_month": {
+        "name": "Mean pressure this month"
+      },
+      "summary_pressure_max_month": {
+        "name": "Maximum pressure this month"
+      },
+      "summary_pressure_min_year": {
+        "name": "Minimum pressure this year"
+      },
+      "summary_pressure_mean_year": {
+        "name": "Mean pressure this year"
+      },
+      "summary_pressure_max_year": {
+        "name": "Maximum pressure this year"
+      },
+      "summary_irradiance_mean_today": {
+        "name": "Mean solar irradiance today"
+      },
+      "summary_irradiance_max_today": {
+        "name": "Maximum solar irradiance today"
+      },
+      "summary_irradiance_mean_month": {
+        "name": "Mean solar irradiance this month"
+      },
+      "summary_irradiance_max_month": {
+        "name": "Maximum solar irradiance this month"
+      },
+      "summary_irradiance_mean_year": {
+        "name": "Mean solar irradiance this year"
+      },
+      "summary_irradiance_max_year": {
+        "name": "Maximum solar irradiance this year"
+      },
+      "summary_wind_speed_mean_today": {
+        "name": "Mean wind speed today"
+      },
+      "summary_wind_speed_mean_month": {
+        "name": "Mean wind speed this month"
+      },
+      "summary_wind_speed_mean_year": {
+        "name": "Mean wind speed this year"
+      },
+      "alert_level": {
+        "name": "Alert level",
+        "state": {
+          "none": "No alerts",
+          "yellow": "Yellow",
+          "orange": "Orange",
+          "red": "Red"
+        }
+      }
+    },
+    "weather": {
+      "weather": {
+        "name": "Weather"
+      }
+    }
+  }
+}

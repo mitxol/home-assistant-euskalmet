@@ -8,12 +8,15 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.util import dt as dt_util
 
 from .api import EuskalmetAPI, EuskalmetAPIError
 from .const import DOMAIN
 from .coordinator import EuskalmetCoordinator
+from .entity import device_info
 from .history_websocket import async_register_history_websocket
 from .radar_websocket import async_register_websocket_commands
 
@@ -74,6 +77,7 @@ async def async_setup_entry(
     await _async_register_frontend(hass)
     coordinator = EuskalmetCoordinator(
         hass=hass,
+        config_entry=entry,
         email=entry.data["email"],
         private_key=entry.data["private_key"],
         region=entry.data.get("region", "01"),
@@ -88,6 +92,14 @@ async def async_setup_entry(
     coordinator.config_entry_id = entry.entry_id
 
     await coordinator.async_config_entry_first_refresh()
+
+    # Registrar primero la estación para que los dispositivos secundarios
+    # (resúmenes, polen, mar) puedan enlazarse con ``via_device_id``.
+    station_device = dr.async_get(hass).async_get_or_create(
+        config_entry_id=entry.entry_id,
+        **device_info(coordinator.api.station_id, coordinator.api.station_name),
+    )
+    coordinator.device_id = station_device.id
 
     hass.data[DOMAIN].setdefault("coordinators", {})[entry.entry_id] = coordinator
 
@@ -114,6 +126,7 @@ async def async_migrate_entry(
         session=async_get_clientsession(hass),
         email=entry.data["email"],
         private_key=entry.data["private_key"],
+        time_zone=dt_util.get_default_time_zone(),
     )
 
     try:

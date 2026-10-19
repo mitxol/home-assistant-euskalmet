@@ -1,4 +1,27 @@
 const EUSKALMET_ASSET_ROOT = "/euskalmet_static";
+const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services";
+const OSM_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+const ESRI_ATTRIBUTION = '&copy; <a href="https://www.esri.com/">Esri</a>';
+// Mapas base públicos que no necesitan clave ni muestran marcas de agua.
+const BASEMAPS = {
+  osm: [{ url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", maxZoom: 19, attribution: OSM_ATTRIBUTION }],
+  gray: [{ url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", maxZoom: 19, attribution: OSM_ATTRIBUTION, className: "basemap-gray" }],
+  topo: [{ url: `${ESRI}/World_Topo_Map/MapServer/tile/{z}/{y}/{x}`, maxZoom: 19, attribution: `${ESRI_ATTRIBUTION}, HERE, Garmin, &copy; OpenStreetMap` }],
+  light: [
+    { url: `${ESRI}/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}`, maxZoom: 16, attribution: ESRI_ATTRIBUTION },
+    { url: `${ESRI}/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}`, maxZoom: 16, overlay: true },
+  ],
+  dark: [
+    { url: `${ESRI}/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}`, maxZoom: 16, attribution: ESRI_ATTRIBUTION },
+    { url: `${ESRI}/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}`, maxZoom: 16, overlay: true },
+  ],
+  satellite: [
+    { url: `${ESRI}/World_Imagery/MapServer/tile/{z}/{y}/{x}`, maxZoom: 19, attribution: `${ESRI_ATTRIBUTION}, Maxar, Earthstar Geographics` },
+    { url: `${ESRI}/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}`, maxZoom: 19, overlay: true },
+  ],
+};
+
 const OFFICIAL_BOUNDS = [
   [41.864983, -3.7478],
   [43.655708, -1.2893926],
@@ -30,6 +53,7 @@ class EuskalmetRadarMapCard extends HTMLElement {
 
     this._config = {
       opacity: 1,
+      map_style: "gray",
       frame_interval: 125,
       autoplay: true,
       show_header: true,
@@ -173,9 +197,10 @@ class EuskalmetRadarMapCard extends HTMLElement {
         background: var(--secondary-background-color);
       }
       .map-shell { position: relative; }
-      .leaflet-tile-pane {
+      .basemap-gray {
         filter: grayscale(1) saturate(0) contrast(0.9) brightness(1.08);
       }
+      .leaflet-pane.basemap-labels { pointer-events: none; }
       .map-controls {
         position: absolute;
         z-index: 600;
@@ -456,16 +481,34 @@ class EuskalmetRadarMapCard extends HTMLElement {
         scrollWheelZoom: true,
       });
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      }).addTo(this._map);
+      this._addBasemap(L);
 
       this._map.fitBounds(this._currentBounds(), { padding: [8, 8] });
       this._syncFromState();
       queueMicrotask(() => this._map?.invalidateSize());
     } catch (error) {
       this._showMessage(error.message);
+    }
+  }
+
+  _addBasemap(L) {
+    const style = String(this._config?.map_style || "gray").toLowerCase();
+    const layers = BASEMAPS[style] || BASEMAPS.gray;
+    // Las etiquetas van por encima del radar para que se lean los nombres.
+    if (layers.some((layer) => layer.overlay)) {
+      this._map.createPane("basemap-labels");
+      const pane = this._map.getPane("basemap-labels");
+      pane.style.zIndex = 450;
+      pane.classList.add("basemap-labels");
+    }
+    for (const layer of layers) {
+      L.tileLayer(layer.url, {
+        maxZoom: layer.maxZoom,
+        maxNativeZoom: layer.maxZoom,
+        attribution: layer.attribution,
+        className: layer.className,
+        pane: layer.overlay ? "basemap-labels" : "tilePane",
+      }).addTo(this._map);
     }
   }
 

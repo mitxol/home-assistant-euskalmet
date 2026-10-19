@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, tzinfo
 from typing import Any
-from zoneinfo import ZoneInfo
 
 
 def _number(value: object) -> float | None:
@@ -57,7 +56,7 @@ def _texts(value: object) -> dict[str, str]:
     return result
 
 
-def _forecast_date(value: object, time_zone: ZoneInfo) -> date | None:
+def _forecast_date(value: object, time_zone: tzinfo) -> date | None:
     """Extract a civil date from an API date or datetime."""
 
     if not isinstance(value, str) or not value.strip():
@@ -79,7 +78,7 @@ def _forecast_date(value: object, time_zone: ZoneInfo) -> date | None:
 
 def parse_ocean_forecast(
     document: object,
-    time_zone: ZoneInfo,
+    time_zone: tzinfo,
 ) -> dict[str, Any]:
     """Normalize the useful fields from an Ocean Forecast response."""
 

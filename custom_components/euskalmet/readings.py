@@ -490,6 +490,7 @@ def combine_provisional_summaries(
             if isinstance(summary.get("mean"), (int, float))
             and int(summary.get("processedReadings", 0)) > 0
         ]
+        mean_weight = sum(weight for _, weight in weighted_means)
         minima = [
             summary["min"]
             for summary in summaries
@@ -515,8 +516,9 @@ def combine_provisional_summaries(
                     else None,
                     "total": sum(totals),
                     "mean": (
-                        sum(value * weight for value, weight in weighted_means) / count
-                        if count
+                        sum(value * weight for value, weight in weighted_means)
+                        / mean_weight
+                        if mean_weight
                         else None
                     ),
                     "processedReadings": count,

@@ -127,3 +127,16 @@ def test_undocumented_values_are_preserved() -> None:
 
     assert result["events"] == []
     assert result["raw_tides"] == raw
+
+
+def test_parse_tide_report_keeps_zero_height() -> None:
+    result = parse_tide_report(
+        {
+            "date": "2026-07-31",
+            "tides": [{"type": "LOW_TIDE", "time": "12:40", "height": 0}],
+        },
+        date(2026, 7, 31),
+        TIME_ZONE,
+    )
+
+    assert result["events"][0]["height"] == 0.0

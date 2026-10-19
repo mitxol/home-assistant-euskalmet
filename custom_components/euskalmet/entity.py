@@ -19,17 +19,31 @@ def device_info(station_id: str, station_name: str) -> DeviceInfo:
     )
 
 
-def summary_device_info(station_id: str, station_name: str) -> DeviceInfo:
+def _with_parent(info: DeviceInfo, parent_device_id: str | None) -> DeviceInfo:
+    """Enlazar un dispositivo secundario con la estación principal."""
+
+    if parent_device_id is not None:
+        info["via_device_id"] = parent_device_id
+    return info
+
+
+def summary_device_info(
+    station_id: str,
+    station_name: str,
+    parent_device_id: str | None,
+) -> DeviceInfo:
     """Construir el dispositivo separado de resúmenes y estadísticas."""
 
-    return DeviceInfo(
-        identifiers={(DOMAIN, f"{station_id}_summaries")},
-        manufacturer=MANUFACTURER,
-        model="Resúmenes meteorológicos",
-        translation_key="summaries",
-        translation_placeholders={"station_name": station_name},
-        sw_version="OpenData API",
-        via_device=(DOMAIN, station_id),
+    return _with_parent(
+        DeviceInfo(
+            identifiers={(DOMAIN, f"{station_id}_summaries")},
+            manufacturer=MANUFACTURER,
+            model="Resúmenes meteorológicos",
+            translation_key="summaries",
+            translation_placeholders={"station_name": station_name},
+            sw_version="OpenData API",
+        ),
+        parent_device_id,
     )
 
 
@@ -37,42 +51,33 @@ def pollen_device_info(
     station_id: str,
     municipality_id: str,
     municipality_name: str,
+    parent_device_id: str | None,
 ) -> DeviceInfo:
     """Build the device representing an official pollen station."""
 
-    return DeviceInfo(
-        identifiers={(DOMAIN, f"pollen_{station_id}_{municipality_id}")},
-        manufacturer="Gobierno Vasco - Departamento de Salud",
-        model="Estación de polen",
-        translation_key="pollen_station",
-        translation_placeholders={"municipality_name": municipality_name},
-        sw_version="Open Data Euskadi API",
-        via_device=(DOMAIN, station_id),
+    return _with_parent(
+        DeviceInfo(
+            identifiers={(DOMAIN, f"pollen_{station_id}_{municipality_id}")},
+            manufacturer="Gobierno Vasco - Departamento de Salud",
+            model="Estación de polen",
+            translation_key="pollen_station",
+            translation_placeholders={"municipality_name": municipality_name},
+            sw_version="Open Data Euskadi API",
+        ),
+        parent_device_id,
     )
 
 
-def astronomy_device_info(station_id: str, station_name: str) -> DeviceInfo:
-    """Build the separate device for Euskalmet astronomical information."""
-
-    return DeviceInfo(
-        identifiers={(DOMAIN, f"{station_id}_astronomy")},
-        manufacturer=MANUFACTURER,
-        model="Calendario astronómico",
-        translation_key="astronomy",
-        translation_placeholders={"station_name": station_name},
-        sw_version="OpenData API",
-        via_device=(DOMAIN, station_id),
-    )
-
-
-def ocean_device_info(station_id: str) -> DeviceInfo:
+def ocean_device_info(station_id: str, parent_device_id: str | None) -> DeviceInfo:
     """Build the separate device for Euskalmet ocean information."""
 
-    return DeviceInfo(
-        identifiers={(DOMAIN, f"{station_id}_ocean")},
-        manufacturer=MANUFACTURER,
-        model="Previsión marítima",
-        translation_key="ocean",
-        sw_version="OpenData API",
-        via_device=(DOMAIN, station_id),
+    return _with_parent(
+        DeviceInfo(
+            identifiers={(DOMAIN, f"{station_id}_ocean")},
+            manufacturer=MANUFACTURER,
+            model="Previsión marítima",
+            translation_key="ocean",
+            sw_version="OpenData API",
+        ),
+        parent_device_id,
     )

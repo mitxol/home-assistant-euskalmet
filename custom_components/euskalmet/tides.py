@@ -6,9 +6,8 @@ import json
 import re
 import unicodedata
 from contextlib import suppress
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, tzinfo
 from typing import Any
-from zoneinfo import ZoneInfo
 
 
 def _slug(value: object) -> str:
@@ -29,6 +28,16 @@ def _number(value: object) -> float | None:
     return number if number == number and abs(number) != float("inf") else None
 
 
+def _first(item: dict[str, Any], *keys: str) -> object:
+    """Return the first present value, keeping legitimate zeros."""
+
+    for key in keys:
+        value = item.get(key)
+        if value is not None and value != "":
+            return value
+    return None
+
+
 def _tide_type(value: object) -> str | None:
     slug = _slug(value)
     if any(word in slug for word in ("high", "pleamar", "itsasgora")):
@@ -41,7 +50,7 @@ def _tide_type(value: object) -> str | None:
 def _event_time(
     value: object,
     report_date: date,
-    time_zone: ZoneInfo,
+    time_zone: tzinfo,
 ) -> datetime | None:
     if not isinstance(value, str) or not value.strip():
         return None
@@ -70,7 +79,7 @@ def _event_time(
 def _event_from_item(
     item: object,
     report_date: date,
-    time_zone: ZoneInfo,
+    time_zone: tzinfo,
 ) -> dict[str, Any] | None:
     raw = item
     if isinstance(item, str):
@@ -101,11 +110,7 @@ def _event_from_item(
             time_zone,
         )
         height = _number(
-            item.get("height")
-            or item.get("high")
-            or item.get("meters")
-            or item.get("level")
-            or item.get("value")
+            _first(item, "height", "high", "meters", "level", "value")
         )
     else:
         text = str(item)
@@ -127,7 +132,7 @@ def _event_from_item(
 def parse_tide_report(
     document: object,
     requested_date: date,
-    time_zone: ZoneInfo,
+    time_zone: tzinfo,
 ) -> dict[str, Any]:
     """Normalize one day of tides while preserving undocumented raw values."""
 

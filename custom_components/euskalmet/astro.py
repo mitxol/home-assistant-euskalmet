@@ -5,9 +5,8 @@ from __future__ import annotations
 import re
 import unicodedata
 from contextlib import suppress
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, tzinfo
 from typing import Any
-from zoneinfo import ZoneInfo
 
 MOON_PHASE_ALIASES = {
     "new_moon": "new_moon",
@@ -106,7 +105,7 @@ def normalize_moon_phase(value: object) -> str | None:
 def parse_astro_date(
     value: object,
     requested_date: date,
-    time_zone: ZoneInfo,
+    time_zone: tzinfo,
 ) -> date:
     """Convert the API calendar instant to its local civil date."""
 
@@ -130,7 +129,7 @@ def parse_astro_date(
 def parse_astro_time(
     value: object,
     calendar_date: date,
-    time_zone: ZoneInfo,
+    time_zone: tzinfo,
 ) -> datetime | None:
     """Parse an ISO datetime or a UTC clock time from the Astro API."""
 
@@ -166,7 +165,7 @@ def parse_astro_time(
 def parse_astro_calendar(
     document: object,
     requested_date: date,
-    time_zone: ZoneInfo,
+    time_zone: tzinfo,
 ) -> dict[str, Any]:
     """Normalize the useful sun and moon fields from an Astro response."""
 

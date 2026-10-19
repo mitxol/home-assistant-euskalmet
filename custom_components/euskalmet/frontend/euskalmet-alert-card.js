@@ -15,7 +15,17 @@ class EuskalmetAlertCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const previous = this._hass;
     this._hass = hass;
+    // Home Assistant asigna ``hass`` con cada cambio de cualquier entidad;
+    // solo se vuelve a pintar si cambia la entidad de avisos o el idioma.
+    if (
+      previous &&
+      previous.states?.[this._config?.entity] === this._state() &&
+      previous.locale?.language === hass?.locale?.language
+    ) {
+      return;
+    }
     this._render();
   }
 

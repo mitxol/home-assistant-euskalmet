@@ -10,6 +10,7 @@ from homeassistant.components.weather import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
+    UnitOfPrecipitationDepth,
     UnitOfPressure,
     UnitOfSpeed,
     UnitOfTemperature,
@@ -77,6 +78,7 @@ class EuskalmetWeather(
     )
 
     _attr_native_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_native_precipitation_unit = UnitOfPrecipitationDepth.MILLIMETERS
     _attr_native_pressure_unit = UnitOfPressure.HPA
     _attr_native_wind_speed_unit = UnitOfSpeed.KILOMETERS_PER_HOUR
 
@@ -373,11 +375,12 @@ class EuskalmetWeather(
             return forecast
 
         daily = sorted(
-            self.coordinator.data.get(
-                "forecast_daily",
-                [],
+            (
+                day
+                for day in self.coordinator.data.get("forecast_daily") or []
+                if isinstance(day, dict)
             ),
-            key=lambda day: day.get("date", ""),
+            key=lambda day: str(day.get("date", "")),
         )
 
         for day in daily:

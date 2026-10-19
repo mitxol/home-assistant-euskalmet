@@ -23,7 +23,7 @@ de Euskalmet y Open Data Euskadi.
 > como fuente de datos; no convierte esta integración en un proyecto oficial de
 > Euskalmet ni de Weather Radar Card.
 
-> Versión `2.12.7`. [Cambios de esta versión](CAMBIOS-2.12.7.md).
+> Versión `2.12.8`. [Cambios de esta versión](CAMBIOS-2.12.8.md).
 
 ## Funciones
 
@@ -202,8 +202,8 @@ puntos > Recursos**, con tipo **Módulo JavaScript**:
 
 ```text
 /euskalmet_static/euskalmet-history-card.js?v=4
-/euskalmet_static/weather-radar-card-euskalmet.js?v=5
-/euskalmet_static/euskalmet-alert-card.js?v=1
+/euskalmet_static/weather-radar-card-euskalmet.js?v=6
+/euskalmet_static/euskalmet-alert-card.js?v=2
 ```
 
 La adaptación registra `custom:weather-radar-card-euskalmet`, por lo que puede
@@ -222,7 +222,7 @@ completa del navegador.
 ```yaml
 type: custom:weather-radar-card-euskalmet
 data_source: Euskalmet
-map_style: Light
+map_style: OSM
 radar_opacity: 1
 past_minutes: 360
 show_color_bar: false
@@ -230,6 +230,17 @@ zoom_level: 7
 center_latitude: zone.home
 center_longitude: zone.home
 ```
+
+Estilos de mapa disponibles en `map_style`. Ninguno necesita clave ni muestra
+marcas de agua:
+
+| Valor | Mapa base |
+| --- | --- |
+| `Auto` / `OSM` | OpenStreetMap a color, con nombres en castellano y euskera |
+| `Voyager` | Topográfico de Esri, con relieve |
+| `Light` | Gris claro de Esri, muy neutro para resaltar la lluvia |
+| `Dark` | Gris oscuro de Esri, pensado para temas oscuros |
+| `Satellite` | Imagen de satélite de Esri con nombres de lugares |
 
 La tarjeta obtiene los fotogramas autenticados a través de la integración. No
 expone las credenciales de Euskalmet al navegador. La capa utiliza los límites
@@ -282,7 +293,7 @@ Copiar ID de la entrada**.
 Añade este recurso JavaScript desde **Ajustes > Paneles de control > Recursos**:
 
 ```text
-/euskalmet_static/euskalmet-alert-card.js?v=1
+/euskalmet_static/euskalmet-alert-card.js?v=2
 ```
 
 Después añade la tarjeta:

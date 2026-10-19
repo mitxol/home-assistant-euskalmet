@@ -5,13 +5,13 @@ import base64
 import logging
 import time
 from contextlib import suppress
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta, tzinfo
 from typing import Any
 from urllib.parse import quote
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import aiohttp
 import jwt
+from homeassistant.util import dt as dt_util
 
 from .astro import parse_astro_calendar
 from .const import (
@@ -155,7 +155,7 @@ class EuskalmetAPI:
         pollen_municipality_id: str = "059",
         pollen_municipality_name: str = "Vitoria-Gasteiz",
         preferred_language: str = "es",
-        time_zone: str = "Europe/Madrid",
+        time_zone: tzinfo | None = None,
     ) -> None:
         self.session = session
 
@@ -171,10 +171,9 @@ class EuskalmetAPI:
         self.pollen_municipality_name = pollen_municipality_name
         self.preferred_language = preferred_language
 
-        try:
-            self.time_zone = ZoneInfo(time_zone)
-        except ZoneInfoNotFoundError:
-            self.time_zone = UTC
+        # Recibir siempre un tzinfo ya resuelto: construir ``ZoneInfo`` aquí
+        # puede leer la base de datos de zonas del disco dentro del event loop.
+        self.time_zone: tzinfo = time_zone or dt_util.get_default_time_zone()
 
         self.station_id = station_id
         self.station_name = station_name
@@ -914,7 +913,7 @@ class EuskalmetAPI:
     async def get_daily_forecast(self) -> list[dict[str, Any]]:
         """Obtener la previsión diaria."""
 
-        today = datetime.now().astimezone()
+        today = datetime.now(self.time_zone)
         region = quote(self.region, safe="")
         zone = quote(self.zone, safe="")
         location = quote(self.location, safe="")
@@ -953,7 +952,7 @@ class EuskalmetAPI:
     async def get_hourly_forecast(self) -> dict[str, Any]:
         """Obtener y combinar la previsión horaria de hoy y mañana."""
 
-        today = datetime.now().astimezone()
+        today = datetime.now(self.time_zone)
         region = quote(self.region, safe="")
         zone = quote(self.zone, safe="")
         location = quote(self.location, safe="")
@@ -1058,7 +1057,7 @@ class EuskalmetAPI:
     async def get_alerts(self) -> dict[str, Any]:
         """Obtener avisos meteorológicos."""
 
-        today = datetime.now().astimezone()
+        today = datetime.now(self.time_zone)
 
         index_url = (
             f"{API_BASE}/alerts/zones/{self.alert_zone}/forecast/at/{today:%Y/%m/%d}"
@@ -1250,7 +1249,7 @@ class EuskalmetAPI:
     async def get_radar_report(self) -> dict[str, Any]:
         """Obtener la captura más reciente del radar de precipitación."""
 
-        now = datetime.now().astimezone()
+        now = datetime.now(self.time_zone)
         request_errors: list[EuskalmetAPIError] = []
 
         # En algunos momentos el informe del día actual puede no estar

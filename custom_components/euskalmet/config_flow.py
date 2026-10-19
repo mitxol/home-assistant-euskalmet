@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
@@ -11,6 +12,7 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
 )
+from homeassistant.util import dt as dt_util
 
 from .api import (
     EuskalmetAPI,
@@ -113,7 +115,7 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 session=async_get_clientsession(self.hass),
                 email=user_input["email"],
                 private_key=user_input["private_key"],
-                time_zone=self.hass.config.time_zone,
+                time_zone=dt_util.get_default_time_zone(),
             )
 
             try:
@@ -141,6 +143,59 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Required("email"): str,
                     vol.Required("private_key"): str,
                 }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_reauth(
+        self,
+        entry_data: Mapping[str, Any],
+    ) -> ConfigFlowResult:
+        """Iniciar la reautenticación cuando Euskalmet rechaza el JWT."""
+
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Pedir de nuevo el correo y la clave privada."""
+
+        entry = self._get_reauth_entry()
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            api = EuskalmetAPI(
+                session=async_get_clientsession(self.hass),
+                email=user_input["email"],
+                private_key=user_input["private_key"],
+                time_zone=dt_util.get_default_time_zone(),
+            )
+            try:
+                await api.get_regions()
+            except EuskalmetAuthenticationError:
+                errors["base"] = "invalid_auth"
+            except (EuskalmetConnectionError, EuskalmetAPIError):
+                errors["base"] = "cannot_connect"
+            else:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data_updates={
+                        "email": user_input["email"],
+                        "private_key": user_input["private_key"],
+                    },
+                )
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema(
+                    {
+                        vol.Required("email"): str,
+                        vol.Required("private_key"): str,
+                    }
+                ),
+                {"email": entry.data.get("email")},
             ),
             errors=errors,
         )

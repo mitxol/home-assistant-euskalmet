@@ -34,6 +34,7 @@ from .geography import (
     station_by_id,
 )
 from .ocean import parse_ocean_forecast
+from .pem import normalize_pem
 from .pollen import parse_pollen_measurements
 from .readings import (
     available_aggregated_measure_keys,
@@ -160,7 +161,7 @@ class EuskalmetAPI:
         self.session = session
 
         self.email = email
-        self.private_key = private_key
+        self.private_key = normalize_pem(private_key)
 
         self.region = region
         self.zone = zone

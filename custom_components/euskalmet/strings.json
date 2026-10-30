@@ -32,6 +32,7 @@
       }
     },
     "error": {
+      "invalid_private_key": "La clave privada no es válida. Pega el archivo .pem completo, incluidas las líneas BEGIN y END.",
       "invalid_auth": "Las credenciales de Euskalmet no son válidas.",
       "cannot_connect": "No se pudo conectar con Euskalmet. Inténtalo de nuevo.",
       "cannot_determine_location": "No se pudo asociar la estación elegida con una localidad de previsión de Euskalmet.",

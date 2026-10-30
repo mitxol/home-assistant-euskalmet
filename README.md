@@ -114,11 +114,23 @@ de Home Assistant y reinicia.
 
 ## Configuración
 
-El asistente solicita las credenciales. Hay que introducir email y privatekey.pem
-(incluyendo ------BEGIN PRIVATE KEY---- y ------END PRIVATE KEY----)
-después muestra las estaciones meteorológicas activas  con los sensores que 
-tiene disponibles (no todas las estaciones tienen todos los sensores). 
-Cada estación se configura como una entrada independiente. 
+El asistente solicita las credenciales:
+
+- **Correo electrónico**: el mismo con el que te registraste en Open Data
+  Euskadi, ya que va firmado dentro del token.
+- **Clave privada**: abre `privatekey.pem` con un editor de texto y pega su
+  contenido en el campo. Lo ideal es pegarlo completo, con las líneas
+  `-----BEGIN PRIVATE KEY-----` y `-----END PRIVATE KEY-----`.
+
+No hace falta cuidar el formato al pegar la clave: si se pega desde el móvil y
+llega en una sola línea, con espacios en lugar de saltos de línea o con
+caracteres invisibles del portapapeles, la integración la reconstruye. También
+vale pegar solo el bloque central, sin las líneas BEGIN y END. Si aun así la
+clave no se puede leer, el formulario lo indica bajo el campo.
+
+Después, el asistente muestra las estaciones meteorológicas activas con los
+sensores que tienen disponibles (no todas las estaciones tienen todos los
+sensores). Cada estación se configura como una entrada independiente.
 La integración crea dispositivos separados para las observaciones actuales,
 resúmenes y estadísticas, polen y previsión marítima. El dispositivo marítimo
 agrupa también el calendario solar y lunar y las mareas astronómicas de Pasaia.
@@ -340,7 +352,9 @@ visualización**. La integración conserva el valor numérico original.
 Antes de abrir una incidencia:
 
 1. Actualiza a la última release y reinicia Home Assistant.
-2. Comprueba que las credenciales continúan vigentes.
+2. Comprueba que las credenciales continúan vigentes. Si aparece el error **La clave
+   privada no es válida**, copia de nuevo el contenido de `privatekey.pem` desde
+   el archivo descargado, no desde un correo o un mensaje reenviado.
 3. Actualiza el parámetro `?v=` de los recursos JavaScript.
 4. Fuerza una recarga completa o prueba en una ventana privada.
 5. Indica las versiones de Home Assistant y de la integración y adjunta los

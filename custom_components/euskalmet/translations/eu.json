@@ -31,6 +31,7 @@
       }
     },
     "error": {
+      "invalid_private_key": "Gako pribatua ez da baliozkoa. Itsatsi .pem fitxategi osoa, BEGIN eta END lerroak barne.",
       "invalid_auth": "Euskalmeteko egiaztagiriak ez dira baliozkoak.",
       "cannot_connect": "Ezin izan da Euskalmetekin konektatu. Saiatu berriro.",
       "cannot_determine_location": "Ezin izan da aukeratutako estazioa Euskalmeteko iragarpen-kokaleku batekin lotu.",

@@ -31,6 +31,7 @@
       }
     },
     "error": {
+      "invalid_private_key": "The private key is not valid. Paste the whole .pem file, including the BEGIN and END lines.",
       "invalid_auth": "The Euskalmet credentials are not valid.",
       "cannot_connect": "Could not connect to Euskalmet. Please try again.",
       "cannot_determine_location": "Could not match the selected station with a Euskalmet forecast location.",

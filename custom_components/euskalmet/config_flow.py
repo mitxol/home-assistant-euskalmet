@@ -11,6 +11,9 @@ from homeassistant.helpers.selector import (
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
 )
 from homeassistant.util import dt as dt_util
 
@@ -22,6 +25,35 @@ from .api import (
 )
 from .const import DOMAIN, MEASURES
 from .geography import LocationDiscoveryError
+from .pem import normalize_pem
+
+EMAIL_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.EMAIL))
+PRIVATE_KEY_SELECTOR = TextSelector(TextSelectorConfig(multiline=True))
+
+
+def _is_valid_private_key(pem: str) -> bool:
+    """Comprobar que la clave se puede cargar como clave privada."""
+
+    from cryptography.hazmat.primitives.serialization import (
+        load_pem_private_key,
+    )
+
+    try:
+        load_pem_private_key(pem.encode(), password=None)
+    except (ValueError, TypeError):
+        return False
+    return True
+
+
+def _clean_credentials(user_input: dict[str, Any]) -> dict[str, Any]:
+    """Limpiar el correo y reconstruir la clave PEM pegada."""
+
+    return {
+        **user_input,
+        "email": user_input["email"].strip(),
+        "private_key": normalize_pem(user_input["private_key"]),
+    }
+
 
 EU_MEASURE_NAMES = {
     "temperature": "Tenperatura",
@@ -111,6 +143,13 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            user_input = _clean_credentials(user_input)
+            if not await self.hass.async_add_executor_job(
+                _is_valid_private_key, user_input["private_key"]
+            ):
+                errors["private_key"] = "invalid_private_key"
+
+        if user_input is not None and not errors:
             api = EuskalmetAPI(
                 session=async_get_clientsession(self.hass),
                 email=user_input["email"],
@@ -140,8 +179,8 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required("email"): str,
-                    vol.Required("private_key"): str,
+                    vol.Required("email"): EMAIL_SELECTOR,
+                    vol.Required("private_key"): PRIVATE_KEY_SELECTOR,
                 }
             ),
             errors=errors,
@@ -165,6 +204,13 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            user_input = _clean_credentials(user_input)
+            if not await self.hass.async_add_executor_job(
+                _is_valid_private_key, user_input["private_key"]
+            ):
+                errors["private_key"] = "invalid_private_key"
+
+        if user_input is not None and not errors:
             api = EuskalmetAPI(
                 session=async_get_clientsession(self.hass),
                 email=user_input["email"],
@@ -191,8 +237,8 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=self.add_suggested_values_to_schema(
                 vol.Schema(
                     {
-                        vol.Required("email"): str,
-                        vol.Required("private_key"): str,
+                        vol.Required("email"): EMAIL_SELECTOR,
+                        vol.Required("private_key"): PRIVATE_KEY_SELECTOR,
                     }
                 ),
                 {"email": entry.data.get("email")},

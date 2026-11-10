@@ -314,5 +314,22 @@
         }
       }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Elegir municipio de previsión",
+        "description": "La estación **{station}** seguirá proporcionando las observaciones actuales. Elige el municipio para la previsión diaria y horaria, o conserva el municipio automático de la estación. Los avisos y el resto de sensores siguen asociados a la estación.",
+        "data": {
+          "forecast_location": "Municipio de previsión"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Las credenciales de Euskalmet no son válidas. Actualízalas desde la integración.",
+      "cannot_connect": "No se pudo consultar el catálogo de Euskalmet. Pulsa Enviar para reintentar.",
+      "no_forecast_locations": "El catálogo no contiene municipios de previsión. Pulsa Enviar para reintentar.",
+      "location_not_available": "El municipio elegido ya no está disponible. Elige uno del catálogo."
+    }
   }
 }

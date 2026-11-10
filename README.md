@@ -142,6 +142,26 @@ Los tipos polínicos aparecen como entidades cuando la API los publica. Los
 datos proceden del Departamento de Salud, tienen periodicidad semanal y
 exponen la fecha efectiva de la muestra en el atributo `observed_on`.
 
+### Municipio de previsión
+
+Por defecto, la previsión diaria y horaria corresponde al municipio asociado
+a la estación elegida. Puedes cambiarlo desde **Ajustes > Dispositivos y
+servicios > Euskalmet > Configurar**, sin borrar ni volver a añadir la
+integración. El selector utiliza el catálogo oficial de municipios de Euskalmet.
+
+Por ejemplo, puedes conservar las observaciones de **Miramón** y elegir la
+previsión de **Errenteria**, en lugar de Donostia. La temperatura, humedad y
+viento actuales siguen siendo mediciones de Miramón; la condición prevista y
+las previsiones diaria y horaria pasan a corresponder a Errenteria. Los
+atributos `localidad_prevision`, `zona_prevision`, `region_prevision` y
+`estacion_medicion` de la entidad meteorológica identifican ambos orígenes.
+
+El cambio recarga la integración automáticamente y conserva los identificadores
+de las entidades. Los avisos, el polen, las coordenadas y los demás sensores
+siguen asociados a la estación. Elige **Municipio de la estación (automático)**
+para volver al comportamiento anterior. Las instalaciones existentes conservan
+su configuración hasta que se cambie esta opción.
+
 ### Calendario astronómico
 
 El dispositivo marítimo consulta una vez al día el calendario oficial de

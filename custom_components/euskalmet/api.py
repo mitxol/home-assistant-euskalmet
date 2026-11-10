@@ -620,6 +620,26 @@ class EuskalmetAPI:
             "locations",
         )
 
+    async def get_forecast_locations(self) -> list[dict[str, str]]:
+        """Listar municipios oficiales, conservando región y zona de previsión."""
+        locations: list[dict[str, str]] = []
+        for region_item in await self.get_regions():
+            region = catalog_identifier(region_item, "region")
+            if not region:
+                continue
+            for zone_item in await self.get_zones(region):
+                zone = catalog_identifier(zone_item, "zone")
+                if not zone:
+                    continue
+                for item in await self.get_locations(region, zone):
+                    location = catalog_identifier(item, "location")
+                    if not location:
+                        continue
+                    locations.append(
+                        {"region": region, "zone": zone, "location": location}
+                    )
+        return locations
+
     async def discover_configuration(
         self,
         latitude: float,

@@ -17,6 +17,7 @@ from .api import EuskalmetAPI, EuskalmetAPIError
 from .const import DOMAIN
 from .coordinator import EuskalmetCoordinator
 from .entity import device_info
+from .forecast_location import forecast_configuration
 from .history_websocket import async_register_history_websocket
 from .radar_websocket import async_register_websocket_commands
 
@@ -75,14 +76,15 @@ async def async_setup_entry(
     """Configurar Euskalmet desde una entrada de configuración."""
 
     await _async_register_frontend(hass)
+    forecast = forecast_configuration(entry.data, entry.options)
     coordinator = EuskalmetCoordinator(
         hass=hass,
         config_entry=entry,
         email=entry.data["email"],
         private_key=entry.data["private_key"],
-        region=entry.data.get("region", "01"),
-        zone=entry.data.get("zone", "01"),
-        location=entry.data.get("location", "VITORIA-GASTEIZ"),
+        region=forecast["region"],
+        zone=forecast["zone"],
+        location=forecast["location"],
         station_id=entry.data.get("station_id", "C016"),
         station_name=entry.data.get("station_name", "Arkauti"),
         alert_zone=entry.data.get("alert_zone", "TRANSITION"),

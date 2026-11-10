@@ -314,6 +314,7 @@ class EuskalmetWeather(
             "localidad_prevision": self.coordinator.api.location,
             "region_prevision": self.coordinator.api.region,
             "zona_prevision": self.coordinator.api.zone,
+            "estacion_medicion": self.coordinator.api.station_name,
         }
 
     @property

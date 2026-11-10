@@ -6,6 +6,7 @@ from typing import Any
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
+from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     SelectOptionDict,
@@ -24,6 +25,11 @@ from .api import (
     EuskalmetConnectionError,
 )
 from .const import DOMAIN, MEASURES
+from .forecast_location import (
+    CONF_FORECAST_LOCATION,
+    STATION_FORECAST,
+    forecast_location_key,
+)
 from .geography import LocationDiscoveryError
 from .pem import normalize_pem
 
@@ -71,6 +77,14 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Configurar credenciales y una estación meteorológica elegida."""
 
     VERSION = 2
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> EuskalmetOptionsFlow:
+        """Permitir elegir otro municipio sin recrear la estación ni sus entidades."""
+        return EuskalmetOptionsFlow()
 
     def __init__(self) -> None:
         """Inicializar el flujo de dos pasos."""
@@ -338,5 +352,98 @@ class EuskalmetConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "station": station["station_name"],
                 "available": self._measure_names(station["available_measures"]),
                 "missing": self._measure_names(station["missing_measures"]),
+            },
+        )
+
+
+class EuskalmetOptionsFlow(config_entries.OptionsFlowWithReload):
+    """Configurar únicamente el municipio de previsión."""
+
+    def __init__(self) -> None:
+        self._locations: list[dict[str, str]] | None = None
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Elegir un municipio publicado en el catálogo oficial de Euskalmet."""
+        errors: dict[str, str] = {}
+        if self._locations is None:
+            entry = self.config_entry
+            api = EuskalmetAPI(
+                session=async_get_clientsession(self.hass),
+                email=entry.data["email"],
+                private_key=entry.data["private_key"],
+                time_zone=dt_util.get_default_time_zone(),
+            )
+            try:
+                self._locations = await api.get_forecast_locations()
+            except EuskalmetAuthenticationError:
+                errors["base"] = "invalid_auth"
+            except (EuskalmetConnectionError, EuskalmetAPIError):
+                errors["base"] = "cannot_connect"
+            else:
+                if not self._locations:
+                    self._locations = None
+                    errors["base"] = "no_forecast_locations"
+
+        if self._locations is None:
+            # El botón Enviar permite reintentar sin cambiar la configuración.
+            return self.async_show_form(
+                step_id="init", data_schema=vol.Schema({}), errors=errors
+            )
+
+        allowed = {forecast_location_key(location) for location in self._locations}
+        allowed.add(STATION_FORECAST)
+        if user_input is not None and CONF_FORECAST_LOCATION in user_input:
+            selected = user_input[CONF_FORECAST_LOCATION]
+            if isinstance(selected, str) and selected in allowed:
+                return self.async_create_entry(
+                    title="",
+                    data={
+                        **self.config_entry.options,
+                        CONF_FORECAST_LOCATION: selected,
+                    },
+                )
+            errors[CONF_FORECAST_LOCATION] = "location_not_available"
+
+        use_eu = str(self.hass.config.language).lower().startswith("eu")
+        automatic = (
+            "Estazioaren udalerria (automatikoa)"
+            if use_eu
+            else "Municipio de la estación (automático)"
+        )
+        options = [SelectOptionDict(value=STATION_FORECAST, label=automatic)]
+        options.extend(
+            SelectOptionDict(
+                value=forecast_location_key(location),
+                label=(
+                    f"{location['location'].replace('-', ' ').title()} — "
+                    f"{location['zone'].replace('_', ' ').title()}"
+                ),
+            )
+            for location in sorted(
+                self._locations, key=lambda location: location["location"]
+            )
+        )
+        selected = self.config_entry.options.get(
+            CONF_FORECAST_LOCATION, STATION_FORECAST
+        )
+        if not isinstance(selected, str) or selected not in allowed:
+            selected = STATION_FORECAST
+        return self.async_show_form(
+            step_id="init",
+            data_schema=self.add_suggested_values_to_schema(
+                vol.Schema(
+                    {
+                        vol.Required(CONF_FORECAST_LOCATION): SelectSelector(
+                            SelectSelectorConfig(options=options)
+                        )
+                    }
+                ),
+                {CONF_FORECAST_LOCATION: selected},
+            ),
+            errors=errors,
+            description_placeholders={
+                "station": self.config_entry.data.get("station_name", "")
             },
         )

@@ -314,5 +314,22 @@
         }
       }
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Iragarpenaren udalerria aukeratu",
+        "description": "**{station}** estazioak uneko behaketak ematen jarraituko du. Aukeratu eguneko eta orduko iragarpenetarako udalerria, edo mantendu estazioaren udalerri automatikoa. Abisuek eta gainerako sentsoreek estazioari lotuta jarraituko dute.",
+        "data": {
+          "forecast_location": "Iragarpenaren udalerria"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Euskalmeteko egiaztagiriak ez dira baliozkoak. Eguneratu integraziotik.",
+      "cannot_connect": "Ezin izan da Euskalmeteko katalogoa kontsultatu. Sakatu Bidali berriro saiatzeko.",
+      "no_forecast_locations": "Katalogoak ez du iragarpen-udalerririk. Sakatu Bidali berriro saiatzeko.",
+      "location_not_available": "Aukeratutako udalerria jada ez dago eskuragarri. Aukeratu katalogoko bat."
+    }
   }
 }

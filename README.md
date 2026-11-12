@@ -131,6 +131,12 @@ clave no se puede leer, el formulario lo indica bajo el campo.
 Después, el asistente muestra las estaciones meteorológicas activas con los
 sensores que tienen disponibles (no todas las estaciones tienen todos los
 sensores). Cada estación se configura como una entrada independiente.
+La lista incluye las estaciones meteorológicas automáticas completas (`KM`) y
+las estaciones colaborativas (`KC`), que publican un subconjunto de magnitudes
+—temperatura, humedad, viento y precipitación—, como la de Gardea
+(Laudio/Llodio). Las magnitudes que falten se indican antes de crear la entrada.
+The station list covers both complete automatic stations (`KM`) and
+collaborative stations (`KC`); the latter publish a smaller set of measurements.
 La integración crea dispositivos separados para las observaciones actuales,
 resúmenes y estadísticas, polen y previsión marítima. El dispositivo marítimo
 agrupa también el calendario solar y lunar y las mareas astronómicas de Pasaia.

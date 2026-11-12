@@ -7,7 +7,14 @@ from difflib import SequenceMatcher
 from typing import Any
 
 MAX_STATION_DISTANCE_KM = 120.0
-METEOROLOGICAL_STATION_TYPE = "KM"
+# Tipos de estación del catálogo oficial que publican medidas meteorológicas:
+#   KM -> estación meteorológica automática completa.
+#   KC -> estación colaborativa con un subconjunto de magnitudes
+#         (temperatura, humedad, viento y precipitación, según la estación).
+# Station types in the official catalogue that publish meteorological readings:
+#   KM -> complete automatic weather station.
+#   KC -> collaborative station with a subset of measurements.
+METEOROLOGICAL_STATION_TYPES = frozenset({"KM", "KC"})
 
 _BIZKAIA_COAST = {
     "bakio",
@@ -94,14 +101,14 @@ def station_from_feature(feature: object) -> dict[str, Any] | None:
 def active_meteorological_stations(
     features: Iterable[object],
 ) -> list[dict[str, Any]]:
-    """Listar solo estaciones activas clasificadas como meteorológicas."""
+    """Listar estaciones activas con medidas meteorológicas (KM y KC)."""
 
     stations = []
     for feature in features:
         station = station_from_feature(feature)
         if (
             station is not None
-            and station["station_type"] == METEOROLOGICAL_STATION_TYPE
+            and station["station_type"] in METEOROLOGICAL_STATION_TYPES
         ):
             stations.append(station)
 
